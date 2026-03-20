@@ -2,15 +2,15 @@
 
 DATASET SOURCE: https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset
 
-Project Review:
+## Project Review:
 
 
-# Missing Values
+### Missing Values
 - Deleted 649 rows with missing values
 
-# Duplicates
+### Duplicates
 - No duplicates found
 
-# Logic test
+### Logic test
 - Got 1264 invalid rows
 - Deleted it
