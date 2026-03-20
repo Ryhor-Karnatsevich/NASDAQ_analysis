@@ -10,3 +10,7 @@ Project Review:
 
 # Duplicates
 - No duplicates found
+
+# Logic test
+- Got 1264 invalid rows
+- Deleted it

@@ -17,14 +17,6 @@ print(df.describe())
 
 ## Data Preparation
 
-# Null Test
-df = df.dropna()
-print(df.isnull().sum())
-
-# Duplicate test
-duplicates = df.duplicated().sum()
-print("Duplicates:", duplicates)
-
 # Logical Test
 print("High < Low:", len(df[df["high"] < df["low"]]))
 print("Negative volume:", len(df[df["volume"] < 0]))
