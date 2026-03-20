@@ -1,6 +1,6 @@
 import pandas as pd
 
-is_test = True
+is_test = False
 if is_test:
     path = r"../../Data/test_data.csv"
     output_path = r"../../Data/test_data_cleaned.csv"
