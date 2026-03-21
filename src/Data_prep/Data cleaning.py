@@ -2,11 +2,11 @@ import pandas as pd
 
 is_test = False
 if is_test:
-    path = r"../../Data/test_data.csv"
-    output_path = r"../../Data/test_data_cleaned.csv"
+    path = r"../../Data/Test Data/test_data.csv"
+    output_path = r"../../Data/Test Data/test_data_cleaned.csv"
 else:
-    path = r"../../Data/all_stocks.csv"
-    output_path = r"../../Data/all_stocks_cleaned.csv"
+    path = r"../../Data/Main Data/all_stocks.csv"
+    output_path = r"../../Data/Main Data/all_stocks_cleaned.csv"
 
 df = pd.read_csv(path)
 

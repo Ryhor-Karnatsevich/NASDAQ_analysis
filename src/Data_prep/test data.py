@@ -1,9 +1,9 @@
 import pandas as pd
 
-df = pd.read_csv(r"../../Data/all_stocks.csv")
+df = pd.read_csv(r"../../Data/Main Data/all_stocks.csv")
 df['Date'] = pd.to_datetime(df["Date"])
 
-export_path = r"..\..\Data\test_data.csv"
+export_path = r"../../Data/Test Data/test_data.csv"
 
 print(df.info())
 print(df.head())

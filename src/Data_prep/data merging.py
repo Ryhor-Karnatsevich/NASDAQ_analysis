@@ -3,7 +3,7 @@ import glob
 import os
 
 input_path = r"../../Data/dataset/stocks/*.csv"
-output_file = "../../Data/all_stocks.csv"
+output_file = "../../Data/Main Data/all_stocks.csv"
 
 if not os.path.exists("../../Data"):
     os.makedirs("../../Data")
