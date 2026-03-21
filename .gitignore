@@ -2,5 +2,5 @@
 .idea/
 *.csv
 Data/
-note.md/
-notes.py/
+note.md
+notes.py
