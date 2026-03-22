@@ -53,8 +53,9 @@ print(len(df[df["Close"] == 0]))
 print(len(df[df["High"] == 0]))
 print(len(df[df["Low"] == 0]))
 
-df = df.sort_values(["Ticker","Date"])
 df = df.reset_index(drop=True)
+count  = len(df)
+print(count)
 
 df.to_csv(output_path, index=False)
 

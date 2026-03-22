@@ -3,8 +3,13 @@
 ## Project Overview
 
 This project focused on the statistical and econometric analysis of stock market data.
-The goal is to examine return behavior, volatility patters, and relationships between trading activity and price dynamics.
+The goal is to examine return behavior, volatility patterns, and relationships between trading activity and price dynamics.
 
+## Installation
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
 ---
 
 ## Dataset
@@ -17,30 +22,41 @@ SOURCE: https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset
 
 ---
 
+## Data Integration
+- Raw data was merged into one csv file
+- Also created test dataset with date filtration starting from 2019 to speed up and simplify the process. 
+
 ## Data Cleaning
 
-The dataset wa preprocessed to ensure data quality
+The dataset was preprocessed to ensure data quality
 
 ### Date
 - Standardized date column
 
+### Filtration
+- After reviewing the data, I found that the stocks had different listing dates. 
+- I decided to shorten the sample period so that it starts from 2000-01-01 to ensure data consistency across the modern market era.
+
 ### Missing Values
-- Removed 649 rows with missing values
+- Removed 462 rows with missing values
 
 ### Duplicates
 - All duplicate rows were removed
 
 ### Logical Consistency Check
-- Removed 1264 invalid rows where:
+- Removed invalid rows where:
   - High < Low
   - High < Close
   - Low > Close
   - Volume < 0
 
 ### Invalid Prices
-- A significant number of records (~1 mln) had invalid Open prices equal to zero.
+- A significant number of records had invalid Open prices equal to zero.
 - It has been treated as missing values and removed to ensure data integrity.
 
+### Conclusion:
+- At the end dataset contains 18371813 records.
+- It is consistent and ready to be analyzed.
 ---
 
 ## Feature Engineering
@@ -49,7 +65,7 @@ The following variables were calculated:
 
 - Returns 
 - Log Returns
-- Volatility in 10 days periods
+- Rolling Standard Deviation of Returns
 - Moving Averages (SMA 10, SMA 50)
 - Momentum (10-day return)
 - Volume change
