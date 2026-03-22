@@ -13,7 +13,22 @@ else:
 
 df = pd.read_csv(path)
 df['Date'] = pd.to_datetime(df['Date'])
+
+### some ckeck i don't know what is that
+def data_availability(df):
+    counts = df.groupby("Ticker")["Date"].count()
+    print("Observations per ticker:")
+    print(counts.describe())
+    counts.hist(bins=50)
+    plt.title("Distribution of Observations per Ticker")
+    plt.show()
+data_availability(df)
+
+min_obs = 500
+df = df.groupby("Ticker").filter(lambda x: len(x) >= min_obs)
 all_tickers = df['Ticker'].unique()
+
+
 
 ### EDA Setup
 run_market_eda = True
@@ -85,7 +100,7 @@ def graphics(selected):
 ### Histograms
 def histogram(selected):
     for ticker in selected:
-        data = df[df['Ticker'] == ticker]
+        data = df[df['Ticker'] == ticker].copy()
         data['Returns'].hist(bins=100, figsize=(10, 5))
         plt.title(f"Returns Distribution: {ticker}")
         plt.show()

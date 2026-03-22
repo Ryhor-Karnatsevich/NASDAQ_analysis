@@ -57,14 +57,49 @@ The following variables were calculated:
 
 ---
 
-## Exploratory Data Analysis (EDA)
+# Exploratory Data Analysis (EDA)
 
-- I defined two levels of analysis: MARKET and STOCK levels.
-- On market level I calculated and visualized the following metrics:  Returns Distribution
+Two levels of analysis were defined: market level and stock level.
 
-### Stock Graphics
-- Defined 'graphics' function to make initial analysis of stocks behavior.
-- Created 50 graphics and only one was corrupted. Trend was flat and abrupt. 
-From that I can conclude that in general data was usable for next analysis. 
+## Market Level
 
-### Stock 
+### Records Distribution
+- Distribution is strongly left-skewed.
+- About half of ticker had a data records during all observed period. 
+- However, some stocks have significantly fewer data points due to later listing dates.
+
+### Returns Distribution
+- Returns are strongly centered around zero, indicating that most daily price changes are small.
+- The distribution resembles a normal distribution in shape but shows heavier tails, meaning extreme values occur more frequently than expected under a normal distribution.
+- The distribution appears approximately symmetric.
+
+### Volatility Distribution
+- Volatility is strongly right-skewed.
+- Most observations correspond to low-volatility periods, while a smaller number of observations represent higher volatility levels.
+
+### Correlation Structure
+- Stocks exhibit moderate positive correlation (around 0.3 on average).
+- However, correlations are far from perfect, suggesting that diversification is possible.
+
+## Stock Level
+
+### Price Behavior
+- Stock prices exhibit long-term trends with short-term fluctuations.
+
+### Returns Behavior
+- Returns fluctuate around zero and appear largely random.
+
+### Volatility Behavior
+- Some evidence of volatility clustering is observed, where periods of higher volatility tend to persist.
+
+### Moving Average (SMA)
+- The moving average closely follows the price, smoothing short-term noise without altering the overall trend.
+
+### Autocorrelation (ACF)
+- Autocorrelation is generally close to zero, with only small deviations at a few lags.
+- This suggests weak predictability of returns.
+
+## Data Structure
+- Most stocks have a large number of observations close to the maximum available.
+- However, some stocks have significantly fewer data points due to later listing dates.
+- To ensure data reliability, stocks with fewer than 500 observations were removed.
