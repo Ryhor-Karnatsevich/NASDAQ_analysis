@@ -1,4 +1,4 @@
-# Stock Market Data Analysis (1999-2021)
+# Stock Market Data Analysis (1962-2021)
 
 ## Project Overview
 
@@ -58,6 +58,9 @@ The following variables were calculated:
 ---
 
 ## Exploratory Data Analysis (EDA)
+
+- I defined two levels of analysis: MARKET and STOCK levels.
+- On market level I calculated and visualized the following metrics:  Returns Distribution
 
 ### Stock Graphics
 - Defined 'graphics' function to make initial analysis of stocks behavior.
