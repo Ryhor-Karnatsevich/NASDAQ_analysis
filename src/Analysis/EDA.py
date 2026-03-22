@@ -14,7 +14,7 @@ else:
 df = pd.read_csv(path)
 df['Date'] = pd.to_datetime(df['Date'])
 
-### some ckeck i don't know what is that
+### Records Distribution
 def data_availability(df):
     counts = df.groupby("Ticker")["Date"].count()
     print("Observations per ticker:")
@@ -24,15 +24,16 @@ def data_availability(df):
     plt.show()
 data_availability(df)
 
+# Filtration
 min_obs = 500
 df = df.groupby("Ticker").filter(lambda x: len(x) >= min_obs)
 all_tickers = df['Ticker'].unique()
 
 
-
 ### EDA Setup
 run_market_eda = True
 corr_sample = 20
+
 # 1 Market Level
 ###------------------------------------------------------------------------------
 ### GET TICKERS
@@ -91,31 +92,31 @@ def get_tickers(all_tickers):
 selected = get_tickers(all_tickers)
 # --------------------------------------------------------------------------------
 
-#### Graphics
-def graphics(selected):
+#### Stock Graphics
+def price(selected):
     for ticker in selected:
-        df[df['Ticker'] == ticker].plot(x='Date', y="Close", title=ticker)
+        df.loc[df['Ticker'] == ticker].plot(x='Date', y="Close", title=ticker)
         plt.show()
 
-### Histograms
-def histogram(selected):
+### Returns distribution
+def returns(selected):
     for ticker in selected:
-        data = df[df['Ticker'] == ticker].copy()
+        data = df.loc[df['Ticker'] == ticker].copy()
         data['Returns'].hist(bins=100, figsize=(10, 5))
         plt.title(f"Returns Distribution: {ticker}")
         plt.show()
 
-### Volatility Clustering
-def clustering(selected):
+### Volatility Clustering Check
+def volatility(selected):
     for ticker in selected:
-        data = df[df['Ticker'] == ticker]
+        data = df.loc[df['Ticker'] == ticker]
         data.plot(x='Date', y='Volatility', figsize=(10, 5), title=f"Volatility over time: {ticker}")
         plt.show()
 
-### Rolling Mean vs Price
+### Moving Average vs Price
 def SMA(selected):
     for ticker in selected:
-        data = df[df['Ticker'] == ticker]
+        data = df.loc[df['Ticker'] == ticker]
         plt.figure(figsize=(10, 5))
         plt.plot(data['Date'], data['Close'], label='Price', alpha=0.5)
         plt.plot(data['Date'], data['SMA_10'], label='MA 10', color='red')
@@ -123,10 +124,10 @@ def SMA(selected):
         plt.legend()
         plt.show()
 
-### ACF
+### Autocorrelation Function
 def ACF(selected, lags=30):
     for ticker in selected:
-        ticker_data = df[df['Ticker'] == ticker]["Returns"].dropna()
+        ticker_data = df.loc[df['Ticker'] == ticker, "Returns"].dropna()
 
         fig, ax = plt.subplots(figsize=(10, 5))
         plot_acf(ticker_data, lags=lags, ax=ax)
@@ -138,9 +139,9 @@ def ACF(selected, lags=30):
 ### Running all functions
 ###---------------------------------------------------------------------------
 if selected:
-    graphics(selected)
-    histogram(selected)
-    clustering(selected)
+    price(selected)
+    returns(selected)
+    volatility(selected)
     SMA(selected)
     ACF(selected)
 else:

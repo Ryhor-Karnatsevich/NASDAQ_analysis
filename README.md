@@ -70,7 +70,7 @@ Two levels of analysis were defined: market level and stock level.
 
 ### Returns Distribution
 - Returns are strongly centered around zero, indicating that most daily price changes are small.
-- The distribution resembles a normal distribution in shape but shows heavier tails, meaning extreme values occur more frequently than expected under a normal distribution.
+- The distribution is centered around zero but deviates from normality due to the presence of fat tails.
 - The distribution appears approximately symmetric.
 
 ### Volatility Distribution
@@ -79,7 +79,7 @@ Two levels of analysis were defined: market level and stock level.
 
 ### Correlation Structure
 - Stocks exhibit moderate positive correlation (around 0.3 on average).
-- However, correlations are far from perfect, suggesting that diversification is possible.
+- However, correlations are far from perfect, suggesting the presence of common market factors.
 
 ## Stock Level
 
