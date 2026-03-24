@@ -5,6 +5,7 @@
 This project focused on the statistical and econometric analysis of stock market data.
 The goal is to examine return behavior, volatility patterns, and relationships between trading activity and price dynamics.
 
+
 ## Installation
 1. Clone the repository
 2. Install dependencies:
@@ -126,11 +127,20 @@ Two levels of analysis were defined: market level and stock level.
 
 - In that part I wanted to confirm or refute hypotheses of efficient market and examine valuable information I can use for building investment strategy.
 
+
 ### Ordinary Least Squares (OLS Model)
+========================================================
 - An OLS regression model was used to examine whether past returns and trading volume can predict future returns.
 ---
 - The results show that lagged returns are statistically significant but economically weak, suggesting only minor short-term momentum effects.
 - Trading volume does not appear to have a statistically significant impact on future returns.
 - The overall explanatory power of the model is very low (R² ≈ 0.001), indicating that stock returns are largely unpredictable.
-
 - Model had an error with heteroscedasticity data, so I used HC3 type to fix it.
+===========================================================
+
+#OLS model
+#return
+
+
+
+
