@@ -201,5 +201,42 @@ All three models provide consistent results:
 - It is unlikely to build a profitable strategy based on this model.
 
 
+## ARIMA model
+
+The purpose of this section is to test whether time series structure in returns can predict future stock values.
+
+### Model specification:
+   ARIMA (1,0,0)
+   - AR(1): LAG RETURNS
+   - d = 0: variable is already stationary
+   - MA = 0: no moving averages
+
+**Method**
+- Data was sorted by ticker and date.
+- Removed stocks with less than 1000 records to ensure model stability.
+- Train/Test split:
+   - Train: before 2019
+   - Test: starting with 2019
+- Model was estimated separately for each stock.
+- Random sample of 10 tickers was used.
+
+---
+
+![ARIMA_returns](Pictures/ARIMA_returns.png)
+
+---
+
+**Interpretation**:
+- The AR(1) coefficient is statistically significant for most stocks, but its magnitude is very small.
+- This indicates that past returns have only a weak influence on future returns.
+- Directional accuracy is around 0.49 on average, which is close to random guessing (0.50).
+- The model is unable to consistently predict the direction of returns.
+- Some stocks have insignificant coefficients (p-value > 0.05), showing that the relationship is not stable across assets.
+- Although statistical significance is present, the economic significance is negligible.
+
+
+**Financial Insight**:
+- The results support the weak form of the Efficient Market Hypothesis
+- - It is unlikely to build a profitable strategy based on this model.
 
 
