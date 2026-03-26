@@ -203,7 +203,7 @@ All three models provide consistent results:
 
 ## ARIMA model
 
-The purpose of this section is to test whether time series structure in returns can predict future stock values.
+The purpose of this section is to test whether time series structure in returns can predict future returns.
 
 ### Model specification:
    ARIMA (1,0,0)
@@ -227,16 +227,17 @@ The purpose of this section is to test whether time series structure in returns 
 ---
 
 **Interpretation**:
-- The AR(1) coefficient is statistically significant for most stocks, but its magnitude is very small.
-- This indicates that past returns have only a weak influence on future returns.
-- Directional accuracy is around 0.49 on average, which is close to random guessing (0.50).
-- The model is unable to consistently predict the direction of returns.
-- Some stocks have insignificant coefficients (p-value > 0.05), showing that the relationship is not stable across assets.
-- Although statistical significance is present, the economic significance is negligible.
+- Most coefficients are statistically significant (p < 0.05), but their values are very small.
+- This means past returns have only a weak effect on future returns.
+- Directional accuracy is around 0.5, so the model predicts almost like random guessing.
+- Results also vary across stocks, indicating low stability.
 
 
 **Financial Insight**:
 - The results support the weak form of the Efficient Market Hypothesis
-- - It is unlikely to build a profitable strategy based on this model.
+- It is unlikely to build a profitable strategy based on this model.
+
+
+## GARCH Model
 
 
