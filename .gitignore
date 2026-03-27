@@ -1,6 +1,5 @@
 .venv/
 .idea/
-*.csv
 Data/dataset
 Data/Main Data
 Data/Test Data
