@@ -1,21 +1,17 @@
+import time
+start_time = time.time()
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from arch import arch_model
 from sklearn.metrics import mean_absolute_error
+from joblib import Parallel, delayed
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1000)
 pd.options.display.float_format = '{:.4f}'.format
 
-
-is_test = False
-
-if is_test:
-    path = r"../../Data/Test Data/test_analysis.csv"
-else:
-    path = r"../../Data/Main Data/all_stocks_analysis.csv"
-
+path = r"../../Data/Main Data/all_stocks_analysis.csv"
 df = pd.read_csv(path)
 df["Date"] = pd.to_datetime(df["Date"])
 df = df.sort_values(["Ticker", "Date"])
@@ -33,7 +29,7 @@ CONFIGS = {
 MODE = "FINAL"
 split_date = "2019-01-01"
 use_random = True
-n = 10
+n = 30
 
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
@@ -42,7 +38,7 @@ else:
 
 
 ### GARCH Model
-def garch_run(df,ticker,split_date,type,p,q,verbose=True):
+def garch_run(df,ticker,split_date,type,p,q,verbose=False):
 #-----------------------------------------------------------
     data = df[df['Ticker'] == ticker].copy()
     data.set_index("Date", inplace=True)
@@ -86,11 +82,11 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=True):
 
     alpha = result.params.get("alpha[1]", np.nan)
     beta = result.params.get("beta[1]", np.nan)
+
     if type == "APARCH":
         delta = result.params.get("delta", np.nan)
     else:
         delta = np.nan
-
 
     if type == "EGARCH":
         persistence = beta_sum
@@ -133,19 +129,54 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=True):
 
 results = []
 
+
+# I used Parallel calculation to reduce some run time. It is about 5-10% on a small sample.
+
+# GRID mode is for comparing models and their parameters with each other on a stock sample.
 if MODE == "GRID":
-    for ticker in tickers:
-        for v in ["GARCH", "EGARCH", "APARCH"]:
-            for p, q in [ (1,1),(2,1),(1,2)]:
-                res = garch_run(df, ticker, split_date, type=v, p=p, q=q, verbose=False)
-                if res: results.append(res)
+    tasks = [(ticker, v, p, q)
+             for ticker in tickers
+             for v in ["GARCH","APARCH","EGARCH"]
+             for p, q in [(1, 1), (2, 1),(1,2)]]
+
+    results = Parallel(n_jobs=-1)(
+        delayed(garch_run)(df, ticker, split_date, type=v, p=p, q=q, verbose=False)
+        for ticker, v, p, q in tasks
+    )
+
+    results = [r for r in results if r is not None]
     results_df = pd.DataFrame(results).sort_values(["ticker", "AIC"])
+# This mode is for calculating chosen model after GRID TEST.
+# It is best suitable for big samples of stocks and for testing the model.
+elif MODE == "FINAL":
+    tasks = [(ticker, CONFIGS.get(ticker, CONFIGS["DEFAULT"])["type"],
+              CONFIGS.get(ticker, CONFIGS["DEFAULT"])["p"],
+              CONFIGS.get(ticker, CONFIGS["DEFAULT"])["q"])
+             for ticker in tickers]
 
-else: # MODE == "FINAL"
-    for ticker in tickers:
-        c = CONFIGS.get(ticker, CONFIGS["DEFAULT"])
-        res = garch_run(df, ticker, split_date, type=c["type"], p=c["p"], q=c["q"], verbose=True)
-        if res: results.append(res)
+    results = Parallel(n_jobs=-1)(
+        delayed(garch_run)(df, ticker, split_date, type=v, p=p, q=q, verbose=False)
+        for ticker, v, p, q in tasks
+    )
+
+    results = [r for r in results if r is not None]
     results_df = pd.DataFrame(results)
+else:
+    print("WRONG MODE")
 
-print(results_df)
+
+# Final row with averages
+if MODE == "FINAL" and not results_df.empty:
+    avg_row = results_df.mean(numeric_only=True)
+    avg_row["ticker"] = "AVERAGE"
+    avg_row["Model"] = results_df["Model"].iloc[0]
+    avg_row["p"] = results_df["p"].iloc[0]
+    avg_row["q"] = results_df["q"].iloc[0]
+    avg_row["converged"] = f"{results_df['converged'].mean() * 100:.1f}%"
+    results_df = pd.concat([results_df, pd.DataFrame([avg_row])], ignore_index=True)
+
+print(results_df.round(4))
+# Adding time for optimization comparison
+end_time = time.time()
+run_time = end_time - start_time
+print(f"\n Run Time : {run_time:.2f} seconds")
