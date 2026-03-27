@@ -1,6 +1,8 @@
 .venv/
 .idea/
 *.csv
-Data/
+Data/dataset
+Data/Main Data
+Data/Test Data
 note.md
 notes.py
