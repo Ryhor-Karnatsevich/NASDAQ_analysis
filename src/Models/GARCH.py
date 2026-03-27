@@ -12,6 +12,7 @@ pd.set_option('display.width', 1000)
 pd.options.display.float_format = '{:.4f}'.format
 
 path = r"../../Data/Main Data/all_stocks_analysis.csv"
+output_path = r"../../Data/Results/results.csv"
 df = pd.read_csv(path)
 df["Date"] = pd.to_datetime(df["Date"])
 df = df.sort_values(["Ticker", "Date"])
@@ -25,11 +26,15 @@ CONFIGS = {
     "DEFAULT": {"type": "EGARCH", "p": 2, "q": 1}
 }
 
+# Want to save results into csv file?
+save = True
 ### SETUP
+
 MODE = "FINAL"
 split_date = "2019-01-01"
 use_random = True
-n = 30
+n = 100
+
 
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
@@ -110,19 +115,23 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=False):
         plt.show()
 
     return {
-        "ticker": ticker,
+        # Information
+        "Ticker": ticker,
         "Model": type,
         "p": p,
         "q": q,
+        # Quality
         "AIC": result.aic,
-        "alpha": alpha,
-        "beta": beta,
-        "converged": result.convergence_flag == 0,
-        "delta": delta,
-        "persistence": persistence,
-        "tomorrow_variance": future_variance,
         "MAE": mae,
         "Relative MAE": relative_mae,
+        # Parameters
+        "alpha": alpha,
+        "beta": beta,
+        "delta": delta,
+        "persistence": persistence,
+        # Other
+        "tomorrow_variance": future_variance,
+        "converged": result.convergence_flag == 0,
         "train size": len(train),
         "test size": len(test)
     }
@@ -168,14 +177,21 @@ else:
 # Final row with averages
 if MODE == "FINAL" and not results_df.empty:
     avg_row = results_df.mean(numeric_only=True)
-    avg_row["ticker"] = "AVERAGE"
+    avg_row["Ticker"] = "AVERAGE"
     avg_row["Model"] = results_df["Model"].iloc[0]
     avg_row["p"] = results_df["p"].iloc[0]
     avg_row["q"] = results_df["q"].iloc[0]
     avg_row["converged"] = f"{results_df['converged'].mean() * 100:.1f}%"
+    results_df = results_df.sort_values("Relative MAE")
     results_df = pd.concat([results_df, pd.DataFrame([avg_row])], ignore_index=True)
+    results_df["train size"] = results_df["train size"].round(0).astype(int)
+    results_df["test size"] = results_df["test size"].round(0).astype(int)
 
 print(results_df.round(4))
+
+# Saving results to csv
+if save:
+    results_df.to_csv(output_path, index=False)
 # Adding time for optimization comparison
 end_time = time.time()
 run_time = end_time - start_time

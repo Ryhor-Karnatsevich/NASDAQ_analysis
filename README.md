@@ -241,3 +241,17 @@ The purpose of this section is to test whether time series structure in returns 
 ## GARCH Model
 
 
+### GRID COMPARING
+- In grid mode I calculated 9 variations of models: GARCH,EGARCH,APARCH with parameters (1,1),(1,2),(2,1) for 10 random stocks.
+all stock had Egarch model as their best and 7 of them had (2,1) as best , and only 3 with (1,1). but the difference was insignificant.
+
+### EGARCH Analysis 
+
+
+### Optimization
+- During the programming I explored the way to reduce run time and included paralleled calculating.
+- I reduced time on about 5%. From 139.22 to 132.61 seconds. ( Used 9 models on 10 tickers)[90 rows x 15 columns]
+
+--
+wrote comments, remember
+--
