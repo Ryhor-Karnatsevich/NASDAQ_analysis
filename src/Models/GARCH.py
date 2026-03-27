@@ -6,6 +6,7 @@ from sklearn.metrics import mean_absolute_error
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1000)
+pd.options.display.float_format = '{:.4f}'.format
 
 
 is_test = False
@@ -33,7 +34,7 @@ n = 2
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
 else:
-    tickers = ["AAPL", "NVDA"]
+    tickers = ["AAPL", "NVDA","GOOGL","AMZN"]
 
 
 ### GARCH Model
@@ -46,39 +47,29 @@ def garch_run(df,ticker,split_date,verbose=True):
 
     train = returns[returns.index < split_date]
     test = returns[returns.index >= split_date]
-
-    print(f"Ticker: {ticker}")
-    print("Train size:", len(train))
-    print("Test size:", len(test))
     # Additional Length filtrating
     if len(train) < 500:
         print(f"{ticker} has less than 500 stocks")
         return None
 #-----------------------------------------------------------
-    model  = arch_model(
-        train,
-        vol='GARCH',
-        p=1,
-        q=1,
-        dist = "t"
-    )
+# Model creating
+    model = arch_model(train, vol='GARCH', p=1, q=1, dist='t')
     result = model.fit(disp=0)
 
     model_full = arch_model(returns, vol='GARCH', p=1, q=1, dist='t')
-    # Метод .fix() подставляет в эту модель параметры, которые ты нашел на train
     test_res = model_full.fix(result.params)
-    test_sigma = test_res.conditional_volatility[test.index]
-    mae = np.mean(np.abs(np.abs(test) - test_sigma))
 
-    # Parameters
+# Metrics
+    test_sigma = test_res.conditional_volatility[test.index] # prediction line
+    mae = mean_absolute_error(np.abs(test), test_sigma)
+
     alpha = result.params.get("alpha[1]", np.nan)
     beta = result.params.get("beta[1]", np.nan)
+    persistence = alpha + beta
 
-
-
-# Forecast
-    forecast = result.forecast(horizon=1)
-    future_variance = forecast.variance.iloc[-1].values[0]
+# Forecast 1 day in the future variance
+    final_forecast = test_res.forecast(horizon=1)
+    future_variance = final_forecast.variance.iloc[-1].values[0]
 
     if verbose:
         plt.figure(figsize=(10, 4))
@@ -92,12 +83,14 @@ def garch_run(df,ticker,split_date,verbose=True):
         "ticker": ticker,
         "alpha": alpha,
         "beta": beta,
-        "persistence": alpha + beta,
+        "persistence": persistence,
         "tomorrow_variance": future_variance,
-        "test_mae": mae,
+        "MAE": mae,
         "train size": len(train),
         "test size": len(test)
     }
+
+
 
 results = []
 for ticker in tickers:
@@ -105,4 +98,8 @@ for ticker in tickers:
     if result is not None:
         results.append(result)
 
-print(pd.DataFrame(results))
+results_df = pd.DataFrame(results)
+avg_row = results_df.mean(numeric_only=True)
+avg_row["ticker"] = "AVG"
+results_df = pd.concat([results_df, pd.DataFrame([avg_row])], ignore_index=True)
+print(results_df)

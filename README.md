@@ -1,4 +1,4 @@
-# Stock Market Data Analysis (1962-2021)
+# Stock Market Data Analysis (1962-2020)
 
 ## Project Overview
 
