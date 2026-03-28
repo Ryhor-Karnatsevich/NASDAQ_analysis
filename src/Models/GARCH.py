@@ -12,7 +12,6 @@ pd.set_option('display.width', 1000)
 pd.options.display.float_format = '{:.4f}'.format
 
 path = r"../../Data/Main Data/all_stocks_analysis.csv"
-output_path = r"../../Data/Results/results.csv"
 df = pd.read_csv(path)
 df["Date"] = pd.to_datetime(df["Date"])
 df = df.sort_values(["Ticker", "Date"])
@@ -30,10 +29,10 @@ CONFIGS = {
 save = True
 ### SETUP
 
-MODE = "FINAL"
+MODE = "GRID"
 split_date = "2019-01-01"
 use_random = True
-n = 100
+n = 20
 
 
 if use_random:
@@ -48,6 +47,7 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=False):
     data = df[df['Ticker'] == ticker].copy()
     data.set_index("Date", inplace=True)
     returns = data["Returns"].replace([np.inf, -np.inf], np.nan).dropna() * 100
+    returns = returns.clip(-100, 100)
 
     train = returns[returns.index < split_date]
     test = returns[returns.index >= split_date]
@@ -57,18 +57,19 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=False):
         return None
 #-----------------------------------------------------------
 # Model creating
-    model = arch_model(train, vol=type, p=p, q=q, dist='t')
+    model = arch_model(train, vol=type, p=p, q=q, dist='t',rescale = True)
     result = model.fit(disp=0)
 
     if result.convergence_flag != 0:
          print(f"{ticker} {type}({p},{q}) does not match (flag={result.convergence_flag})")
          return None
+    sc = getattr(result, 'scale', 1.0)
 
-    model_full = arch_model(returns, vol=type, p=p, q=q, dist='t')
+    model_full = arch_model(returns * sc, vol=type, p=p, q=q, dist='t', rescale=False)
     test_res = model_full.fix(result.params)
 
 # Metrics
-    test_sigma = test_res.conditional_volatility[test.index] # prediction line
+    test_sigma = test_res.conditional_volatility[test.index] / sc # prediction line
     #mae
     mae = mean_absolute_error(np.abs(test), test_sigma)
     # relative mae for comparison
@@ -104,7 +105,11 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=False):
 
 # Forecast 1 day in the future variance
     final_forecast = test_res.forecast(horizon=1)
-    future_variance = final_forecast.variance.iloc[-1].values[0]
+    future_vol = np.sqrt(final_forecast.variance.iloc[-1].values[0] / (sc**2))
+
+    if not np.isfinite(future_vol) or relative_mae > 10 or alpha > 100:
+        print(f"Skipping {ticker}: Invalid results (MAE too high or INF)")
+        return None
 
     if verbose:
         plt.figure(figsize=(10, 4))
@@ -130,7 +135,7 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=False):
         "delta": delta,
         "persistence": persistence,
         # Other
-        "tomorrow_variance": future_variance,
+        "tomorrow_volatility": future_vol,
         "converged": result.convergence_flag == 0,
         "train size": len(train),
         "test size": len(test)
@@ -154,7 +159,7 @@ if MODE == "GRID":
     )
 
     results = [r for r in results if r is not None]
-    results_df = pd.DataFrame(results).sort_values(["ticker", "AIC"])
+    results_df = pd.DataFrame(results).sort_values(["Ticker", "AIC"])
 # This mode is for calculating chosen model after GRID TEST.
 # It is best suitable for big samples of stocks and for testing the model.
 elif MODE == "FINAL":
@@ -190,6 +195,10 @@ if MODE == "FINAL" and not results_df.empty:
 print(results_df.round(4))
 
 # Saving results to csv
+if MODE == "GRID":
+    output_path = r"../../Data/Results/GRID.csv"
+else:
+    output_path = r"../../Data/Results/FINAL.csv"
 if save:
     results_df.to_csv(output_path, index=False)
 # Adding time for optimization comparison
