@@ -240,10 +240,33 @@ The purpose of this section is to test whether time series structure in returns 
 
 ## GARCH Model
 
+The purpose of this section is to model and predict volatility os stock returns.
 
-### GRID COMPARING
-- In grid mode I calculated 9 variations of models: GARCH,EGARCH,APARCH with parameters (1,1),(1,2),(2,1) for 10 random stocks.
-all stock had Egarch model as their best and 7 of them had (2,1) as best , and only 3 with (1,1). but the difference was insignificant.
+Unlike previous models, this approach focuses on volatility instead of returns.
+
+### GRID COMPARISON
+GRID MODE was created to compare multiple specifications and to find the best solution.
+
+**Models tested:**
+ - GARCH
+ - EGARCH
+ - APARCH
+
+**Parameters tested:**
+  - (1,1)
+  - (1,2)
+  - (2,1)
+
+In total, 9 model configurations were evaluated for each stock.
+
+**Results:**
+- EGARCH(2,1) was the most frequently selected model (13 out of 20).
+- Comparison was based on AIC metric.
+- Other models (APARCH or GARCH) occasionally performed better. 
+- GRID results been saved as GRID.csv
+
+**Conclusion from GRID Research:**
+
 
 ### EGARCH Analysis 
 
