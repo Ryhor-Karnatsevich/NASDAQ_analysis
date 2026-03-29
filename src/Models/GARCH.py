@@ -40,8 +40,8 @@ CONFIGS = {
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
 else:
-    tickers = ["AAPL", "NVDA","GOOGL","MSFT","META","AMZN","MLPI"]
-
+    tickers = ["MLPI"]
+#["AAPL", "NVDA","GOOGL","MSFT","META","AMZN","MLPI"]
 
 ### GARCH Model
 def garch_run(df,ticker,split_date,type,p,q,verbose=True):
@@ -124,30 +124,35 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=True):
         plt.legend()
         plt.show()
 
+
     return {
-        # Information
-        "Ticker": ticker,
-        "Model": type,
-        "p": p,
-        "q": q,
-        # Quality
-        "AIC": result.aic,
-        "MAE": mae,
-        "Relative MAE": relative_mae,
-        # Parameters
-        "alpha": alpha,
-        "beta": beta,
-        "delta": delta,
-        "persistence": persistence,
-        # Other
-        "tomorrow_volatility": future_vol,
-        "converged": result.convergence_flag == 0,
-        "train size": len(train),
-        "test size": len(test)
+        "summary": {
+            # Information
+            "Ticker": ticker,
+            "Model": type,
+            "p": p,
+            "q": q,
+            # Quality
+            "AIC": result.aic,
+            "MAE": mae,
+            "Relative MAE": relative_mae,
+            # Parameters
+            "alpha": alpha,
+            "beta": beta,
+            "delta": delta,
+            "persistence": persistence,
+            # Other
+            "tomorrow_volatility": future_vol,
+            "converged": result.convergence_flag == 0,
+            "train size": len(train),
+            "test size": len(test)
+        },
+        # Part for model backtest
+        "series": {
+            "returns": test,
+            "volatility": test_sigma
+        }
     }
-
-results = []
-
 
 # I used Parallel calculation to reduce some run time. It is about 5-10% on a small sample.
 
@@ -162,9 +167,10 @@ if MODE == "GRID":
         delayed(garch_run)(df, ticker, split_date, type=v, p=p, q=q, verbose=False)
         for ticker, v, p, q in tasks
     )
-
     results = [r for r in results if r is not None]
+    results_df = pd.DataFrame([r["summary"] for r in results])
     results_df = pd.DataFrame(results).sort_values(["Ticker", "AIC"])
+
 # This mode is for calculating chosen model after GRID TEST.
 # It best suitable for big samples of stocks and for testing the model.
 elif MODE == "FINAL":
@@ -178,7 +184,7 @@ elif MODE == "FINAL":
         for ticker, v, p, q in tasks
     )
     results = [r for r in results if r is not None]
-    results_df = pd.DataFrame(results)
+    results_df = pd.DataFrame([r["summary"] for r in results])
 else:
     print("WRONG MODE")
 
@@ -209,3 +215,9 @@ if save:
 end_time = time.time()
 run_time = end_time - start_time
 print(f"\n Run Time : {run_time:.2f} seconds")
+
+
+
+import pickle
+with open("../../Data/Results/garch_results.pkl", "wb") as f:
+    pickle.dump(results, f)

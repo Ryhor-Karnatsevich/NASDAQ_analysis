@@ -23,13 +23,13 @@ np.random.seed(52)
 ### ARIMA SETUP
 split_date = "2019-01-01"
 order = (1,0,0)
-use_random = True
+use_random = False
 n = 10
 
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
 else:
-    tickers = ["AAPL", "NVDA"]
+    tickers = ["AAPL", "NVDA","GOOGL","MSFT","META","AMZN","MLPI"]
 
 ### Model Function
 def model_run(df,ticker,order,split_date, verbose=True):
