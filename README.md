@@ -321,9 +321,9 @@ In total, 9 model configurations were evaluated for each stock.
 ---
 
 ### Visual Analysis
-- Predicted volatility is smoother than realized volatility
+- Predicted volatility is smoother than Absolute Returns
 - Model reacts to spikes with delay
-- Predictions often stay elevated after volatility decreases
+- Predictions often stay elevated after return decreases
 
 **This results in:**
 - Lagging response to market shocks

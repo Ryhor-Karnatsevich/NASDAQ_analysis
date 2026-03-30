@@ -40,7 +40,7 @@ CONFIGS = {
 if use_random:
     tickers = np.random.choice(df["Ticker"].unique(), size=n, replace=False)
 else:
-    tickers = ["MLPI"]
+    tickers = ["AAPL", "NVDA","GOOGL","MSFT","META","AMZN","MLPI"]
 #["AAPL", "NVDA","GOOGL","MSFT","META","AMZN","MLPI"]
 
 ### GARCH Model
@@ -118,7 +118,7 @@ def garch_run(df,ticker,split_date,type,p,q,verbose=True):
     # volatility + prediction graphics
     if verbose:
         plt.figure(figsize=(10, 4))
-        plt.plot(np.abs(test), color='gray', alpha=0.3, label='Realized Volatility')
+        plt.plot(np.abs(test), color='gray', alpha=0.3, label='Absolute Return (proxy for volatility)')
         plt.plot(test_sigma, color='red', label=f'{type} Forecast')
         plt.title(f"{ticker} | {type}({p},{q})")
         plt.legend()
