@@ -12,56 +12,63 @@ pd.options.display.float_format = '{:.4f}'.format
 with open("../../Data/Results/garch_results.pkl", "rb") as f:
     results = pickle.load(f)
 
+
+# Strategies Function
 def run_unified_backtest(results, verbose=True):
     all_metrics = [] # For average performances
-    strat_returns_dict = {} # For correlation matrix
-
+    strat_returns_dict = {} # For corr matrix
     for r in results:
         ticker = r["summary"]["Ticker"]
         returns = r["series"]["returns"] / 100
         vol = r["series"]["volatility"] / 100
 
-        # [1] Creating "holding" strategy
+
+        # Strategies
+        #----------------------------------------------------------------------------------
+        # [1] "Buy & Hold" strategy
         weight_fixed = pd.Series(1, index=returns.index)
-        ret_fixed = weight_fixed * returns
+        return_1 = weight_fixed * returns
 
         # [2] Volatility Scaling strategy (Risk Reduction)
         target_vol = 0.02
         position = (target_vol / vol).clip(0, 1)  # No leverages, 0-1x
-        ret_scaling = position * returns
+        return_2 = position * returns
 
         # [3] Volatility Filter (binary switch)
         threshold = vol.rolling(window=50).mean()
         weight_filter = (vol < threshold).astype(float)  # binary test
-        return_filter = weight_filter * returns
+        return_3 = weight_filter * returns
 
         # [4] SMA based strategy
         volatility_sma = vol.rolling(window=200).mean()  # SMA_20
         weight_sma = (volatility_sma / vol).clip(0, 1)
         return_4 = weight_sma * returns
 
-        # [5] Vol Scaling + Trend Filter
-        momentum = returns.rolling(20).sum()  # кумулятивная доходность за 20 дней
-        trend_signal = (momentum > 0).astype(float)  # 1 binary test
-        weight_trend_scaling = position * trend_signal
-        ret_trend_scaling = weight_trend_scaling * returns
+        # [5] Volatility Scaling + Momentum
+        momentum_sum = returns.rolling(20).sum()  # cumulative return 20 days
+        trend_signal = (momentum_sum > 0).astype(float)  # 1 binary test
+        weight_trend_scaling = position * trend_signal # Get position form [2]
+        return_5 = weight_trend_scaling * returns
+        #----------------------------------------------------------------------------------
 
-        strat_returns_dict[ticker] = ret_scaling # store for matrix
+        # Store returns for further correlating matrix creating
+        strat_returns_dict[ticker] = return_1
 
+        # Dictionary with return and weight for final table
         strategies = {
-            "Fixed (B&H)": (ret_fixed, weight_fixed),
-            "Vol Scaling (TVS)": (ret_scaling, position),
-            "Vol Switch": (return_filter, weight_filter),
+            "Fixed (B&H)": (return_1, weight_fixed),
+            "Vol Scaling (TVS)": (return_2, position),
+            "Vol Switch": (return_3, weight_filter),
             "Vol Smart (SMA)": (return_4, weight_sma),
-            "Vol Scaling & Switch": (ret_trend_scaling, weight_trend_scaling) # Fixed unpacking error
+            "Vol Scaling & Switch": (return_5, weight_trend_scaling)
         }
 
         # Dict to store equity and DD for plotting
         plot_data = {}
 
-        for name, (strat_ret, weight) in strategies.items():
-            equity = (1 + strat_ret).cumprod()
-            metrics = calculate_metrics(strat_ret, equity)
+        for name, (strategy_return, weight) in strategies.items():
+            equity = (1 + strategy_return).cumprod() # creates equity curve (line of returns of all previous time)
+            metrics = calculate_metrics(strategy_return, equity) # Use function that below
 
             if metrics:
                 all_metrics.append({
@@ -123,19 +130,26 @@ def run_unified_backtest(results, verbose=True):
 
     return pd.DataFrame(all_metrics)
 
-# Function to calculate metrics for backtests comparison
+
+
+
+# Function to calculate metrics
+#----------------------------------------------------------------------------------------------------------------------------------
 def calculate_metrics(returns_series, equity_series):
 
+    # Data cleaning
     returns_series = returns_series.replace([np.inf, -np.inf], np.nan).dropna()
     if len(returns_series) == 0:
         return None
 
-    total_return = equity_series.iloc[-1] - 1
-    sharpe = (returns_series.mean() / (returns_series.std() + 1e-8)) * np.sqrt(252)
-    max_dd = (equity_series / equity_series.cummax() - 1).min()
-    annual_vol = returns_series.std() * np.sqrt(252)
-    win_rate = (returns_series > 0).mean()
+    # Metrics
+    total_return = equity_series.iloc[-1] - 1                                       # Return for the period
+    sharpe = (returns_series.mean() / (returns_series.std() + 1e-8)) * np.sqrt(252) # Sharpe
+    max_dd = (equity_series / equity_series.cummax() - 1).min()                     # Max Drawdown
+    annual_vol = returns_series.std() * np.sqrt(252)                                # Annual Volatility
+    win_rate = (returns_series > 0).mean()                                          # Percentage of Days when strategy return > 0
 
+    # That dictionary appends to ticker dictionary in all_metrics list
     return {
         "Total Return": total_return,
         "Sharpe": sharpe,
@@ -143,7 +157,7 @@ def calculate_metrics(returns_series, equity_series):
         "Annual Vol": annual_vol,
         "Win Rate": win_rate
     }
-
+#----------------------------------------------------------------------------------------------------------------------------------
 
 
 
