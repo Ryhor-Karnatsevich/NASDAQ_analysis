@@ -14,16 +14,19 @@ with open("../../Data/Results/garch_results.pkl", "rb") as f:
 
 
 # Strategies Function
-def run_unified_backtest(results, verbose=True):
+def strategies_backtest(results, verbose=True):
     all_metrics = [] # For average performances
     strat_returns_dict = {} # For corr matrix
+    plot_data = {} # To store data for Plots
+
+    # Begins iterating on shares [ STRATEGIES, METRICS, VISUALIZATION ]
     for r in results:
         ticker = r["summary"]["Ticker"]
         returns = r["series"]["returns"] / 100
         vol = r["series"]["volatility"] / 100
 
 
-        # Strategies
+        ### STRATEGIES
         #----------------------------------------------------------------------------------
         # [1] "Buy & Hold" strategy
         weight_fixed = pd.Series(1, index=returns.index)
@@ -40,7 +43,7 @@ def run_unified_backtest(results, verbose=True):
         return_3 = weight_filter * returns
 
         # [4] SMA based strategy
-        volatility_sma = vol.rolling(window=200).mean()  # SMA_20
+        volatility_sma = vol.rolling(window=20).mean()  # SMA_20
         weight_sma = (volatility_sma / vol).clip(0, 1)
         return_4 = weight_sma * returns
 
@@ -51,6 +54,9 @@ def run_unified_backtest(results, verbose=True):
         return_5 = weight_trend_scaling * returns
         #----------------------------------------------------------------------------------
 
+
+
+        ### METRICS
         # Store returns for further correlating matrix creating
         strat_returns_dict[ticker] = return_1
 
@@ -63,29 +69,32 @@ def run_unified_backtest(results, verbose=True):
             "Vol Scaling & Switch": (return_5, weight_trend_scaling)
         }
 
-        # Dict to store equity and DD for plotting
-        plot_data = {}
-
+        # Another subiteration to add values to final table and to plot dictionary
         for name, (strategy_return, weight) in strategies.items():
             equity = (1 + strategy_return).cumprod() # creates equity curve (line of returns of all previous time)
             metrics = calculate_metrics(strategy_return, equity) # Use function that below
 
             if metrics:
+                # Adding data to list for final table
                 all_metrics.append({
                     "Ticker": ticker,
                     "Strategy": name,
-                    **metrics
+                    **metrics # from function "calculate_metrics"
                 })
+                # Adding data to list to create plots
                 plot_data[name] = {
                     "equity": equity,
-                    "dd": equity / equity.cummax() - 1,
+                    "drawdown": equity / equity.cummax() - 1,
                     "weight": weight
                 }
 
-        # --- VISUALIZATION PER TICKER ---
+
+        ### VISUALIZATION
+        #------------------------------------------------------------------------------------------------
         if verbose:
+            # Setup for one board with 4 plots
             fig, axes = plt.subplots(2, 2, figsize=(16, 10))
-            fig.suptitle(f"Backtest Analysis: {ticker}", fontsize=16)
+            fig.suptitle(f"Strategies Comparison for : {ticker}", fontsize=16)
 
             # Plot 1: Equity Curves
             for name, data in plot_data.items():
@@ -96,40 +105,50 @@ def run_unified_backtest(results, verbose=True):
 
             # Plot 2: Drawdowns
             for name, data in plot_data.items():
-                axes[0, 1].fill_between(data["dd"].index, data["dd"], 0, alpha=0.3, label=name)
+                axes[0, 1].fill_between(data["drawdown"].index, data["drawdown"], 0, alpha=0.3, label=name)
             axes[0, 1].set_title("Drawdowns")
             axes[0, 1].legend()
             axes[0, 1].grid(True, alpha=0.3)
 
             # Plot 3: Dynamic Weights (TVS vs Smart)
-            axes[1, 0].plot(position, label="Vol Scaling (TVS)", alpha=0.6, color='blue')
-            axes[1, 0].plot(weight_sma, label="Vol Smart (SMA)", alpha=0.6, color='green')
+            axes[1, 0].plot(position, label="Vol Scaling (TVS)", alpha=0.6, color='C0')
+            # axes[1, 0].plot(weight_filter, label="Vol Switch", alpha=0.6, color='C10')                    # not the best option
+            axes[1, 0].plot(weight_sma, label="Vol Smart (SMA)", alpha=0.6, color='C2')
+            # axes[1, 0].plot(weight_trend_scaling, label="Vol Scaling & Switch", alpha=0.6, color='C30')   # not the best option
             axes[1, 0].axhline(y=1, color='black', linestyle='--', alpha=0.5)
-            axes[1, 0].set_title("Strategy Exposure (Position Size)")
+            axes[1, 0].set_title("Position Size")
             axes[1, 0].set_ylim(-0.1, 1.1)
             axes[1, 0].legend()
             axes[1, 0].grid(True, alpha=0.3)
 
             # Plot 4: Volatility Diagnostics
-            axes[1, 1].plot(np.abs(returns), color='gray', alpha=0.2, label='Realized |Return|')
-            axes[1, 1].plot(vol, color='red', alpha=0.8, label='GARCH Predicted Vol')
-            axes[1, 1].set_title("Volatility Analysis")
+            axes[1, 1].plot(np.abs(returns), color='gray', alpha=0.3, label='Realized |Return|')
+            axes[1, 1].plot(vol, color='red', alpha=0.8, label='EGARCH Predicted Volatility')
+            axes[1, 1].set_title("Volatility Prediction vs |Returns|")
             axes[1, 1].legend()
             axes[1, 1].grid(True, alpha=0.3)
 
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.show()
+    ### END of iterations
 
 
-    # Final Correlation Matrix after all tickers are processed
+    # Correlation Matrix
+    #-----------------------------------------------------------------------------------------------
+    # Created dataframe from dictionary with a ticker as a key and series as a value
     df_corr = pd.DataFrame(strat_returns_dict).corr()
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 80)
     print("CORRELATION MATRIX")
-    print("=" * 50)
-    print(df_corr.round(2))
+    print("=" * 80)
+    with pd.option_context('display.float_format', '{:.2f}'.format):
+        print(df_corr)
+
+    # Mean correlation excluding the diagonal
+    mean_corr = (df_corr.sum().sum() - len(df_corr)) / (len(df_corr) ** 2 - len(df_corr))
+    print(f"Average Correlation: {mean_corr:.2f}")
+    # -----------------------------------------------------------------------------------------------
 
     return pd.DataFrame(all_metrics)
-
 
 
 
@@ -147,7 +166,7 @@ def calculate_metrics(returns_series, equity_series):
     sharpe = (returns_series.mean() / (returns_series.std() + 1e-8)) * np.sqrt(252) # Sharpe
     max_dd = (equity_series / equity_series.cummax() - 1).min()                     # Max Drawdown
     annual_vol = returns_series.std() * np.sqrt(252)                                # Annual Volatility
-    win_rate = (returns_series > 0).mean()                                          # Percentage of Days when strategy return > 0
+    hit_ratio = (returns_series > 0).mean()                                         # Percentage of Days when strategy return > 0
 
     # That dictionary appends to ticker dictionary in all_metrics list
     return {
@@ -155,28 +174,33 @@ def calculate_metrics(returns_series, equity_series):
         "Sharpe": sharpe,
         "Max Drawdown": max_dd,
         "Annual Vol": annual_vol,
-        "Win Rate": win_rate
+        "Hit Ratio": hit_ratio
     }
 #----------------------------------------------------------------------------------------------------------------------------------
 
 
+# EXECUTION
+results_df = strategies_backtest(results, verbose=False)
 
-# --- EXECUTION ---
-results_df = run_unified_backtest(results, verbose=True)
 
-# --- FINAL SUMMARY TABLE ---
+# FINAL SUMMARY TABLE PRINTING
 summary = results_df.groupby("Strategy").agg({
     "Total Return": "mean",
     "Sharpe": "mean",
     "Max Drawdown": "mean",
     "Annual Vol": "mean",
-    "Win Rate": "mean"
+    "Hit Ratio": "mean"
 }).sort_values("Sharpe", ascending=False)
 
 print("\n" + "=" * 80)
-print("AVERAGE PERFORMANCE ACROSS ALL TICKERS")
+print("AVERAGE PERFORMANCE OF STRATEGIES")
 print("=" * 80)
-print(summary.round(4))
+print("=" * 80)
+print_summary = summary.copy()
+print_summary["Hit Ratio"] = print_summary["Hit Ratio"].apply(lambda x: f"{x:.2f}")
+print(print_summary)
+
+
 
 # Performance Check
 pivot = results_df.pivot(index='Ticker', columns='Strategy', values='Sharpe')
