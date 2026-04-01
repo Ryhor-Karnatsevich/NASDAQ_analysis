@@ -416,12 +416,19 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 ---
 
 ### Visual Analysis
-- Screenshot of one of ten boards.
-- ???
+- Equity curves show that volatility-based strategies generally reduce drawdown compared to Buy & Hold.
+- TVS + Momentum Filter produces smoother performance, but may lag during strong upward trends.
+- Volatility Filter avoids large losses but often remains out of the market for extended periods.
+- Dynamic position sizing (TVS, Volatility Ratio) adjusts exposure effectively during high volatility regimes.
+- EGARCH volatility forecasts capture volatility clustering and react to market stress periods.
+
 
 ### Conclusion
-- ???
-- 
+- Volatility-based strategies improve risk-adjusted performance compared to Buy & Hold.
+- The combination of volatility targeting and momentum filtering consistently delivers superior results across assets.
+- TVS + Momentum Filter achieves the highest Sharpe ratio and strong return while maintaining controlled drawdowns.
+- It also demonstrates stable outperformance across the majority of tickers.
+- Based on these results, **"TVS + Momentum"** Filter is selected for further development and refinement in the next section.
 
 
 
