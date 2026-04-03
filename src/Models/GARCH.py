@@ -32,7 +32,7 @@ save = False
 ### SETUP
 MODE = "FINAL"
 split_date_grid = "2019-01-01"
-split_dates = ["2010-01-01", "2017-01-01", "2019-01-01"] #["2010-01-01", "2017-01-01", "2019-01-01"]
+split_dates = ["2007-06-01", "2012-01-01", "2015-01-01","2018-04-01"] #["2010-01-01", "2017-01-01", "2019-01-01"]
 use_random = False
 n = 20
 # configurations for FINAL MODE
