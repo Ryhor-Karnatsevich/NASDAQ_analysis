@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import pickle
 import polars as pl
 
@@ -314,23 +315,43 @@ print("AVERAGE PERFORMANCE ACROSS SELECTED PERIODS".center(103))
 print("=" * 103)
 print(summary)
 
-# Sharpe over time
-sharpe_over_time = final_df.groupby(["Period", "Strategy"])["Sharpe"].mean().unstack()
-sharpe_over_time.plot(figsize=(12, 6))
-plt.title("Sharpe Ratio Over Time")
-plt.grid(True)
-plt.show()
 
-# Drawdown over time
-dd_over_time = final_df.groupby(["Period", "Strategy"])["Max Drawdown"].mean().unstack()
-dd_over_time.plot(figsize=(12, 6))
-plt.title("Max Drawdown Over Time")
-plt.grid(True)
-plt.show()
+### ==============================================================================================================
+### PLOTS
+sharpe_dyn = final_df.groupby(["Period", "Strategy"])["Sharpe"].mean().unstack()
+dd_dyn = final_df.groupby(["Period", "Strategy"])["Max Drawdown"].mean().unstack()
+ret_dyn = final_df.groupby(["Period", "Strategy"])["Total Return"].mean().unstack()
 
-# Returns over time
-ret_over_time = final_df.groupby(["Period", "Strategy"])["Total Return"].mean().unstack()
-ret_over_time.plot(figsize=(12, 6))
-plt.title("Returns Over Time")
-plt.grid(True)
+# insert year for axes
+year_labels = [(pd.to_datetime(p) + pd.DateOffset(years=2)).strftime('%Y') for p in sharpe_dyn.index]
+
+fig, axes = plt.subplots(2, 2, figsize=(18, 12))
+fig.suptitle("GLOBAL STRATEGY ROBUSTNESS ANALYSIS (2007-2018)", fontsize=20, fontweight='bold')
+
+# 1. Sharpe Ratio
+sharpe_dyn.reset_index(drop=True).plot(ax=axes[0, 0], marker='o', markersize=5, linewidth=2)
+axes[0, 0].set_title("Sharpe Ratio Dynamics", fontsize=14)
+
+# 2. Max Drawdown
+dd_dyn.reset_index(drop=True).plot(ax=axes[0, 1], marker='s', markersize=5, linewidth=2)
+axes[0, 1].set_title("Max Drawdown per Period", fontsize=14)
+
+# 3. Total Return
+ret_dyn.reset_index(drop=True).plot(ax=axes[1, 0], marker='d', markersize=5, linewidth=2)
+axes[1, 0].set_title("Total Return per Period", fontsize=14)
+
+# Customization for first 3 plots
+for ax in [axes[0, 0], axes[0, 1], axes[1, 0]]:
+    ax.set_xticks(range(0, len(year_labels), 2))
+    ax.set_xticklabels([year_labels[i] for i in range(0, len(year_labels), 2)])
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=8)
+    ax.set_xlabel("Year")
+
+# 4. Boxplot
+final_df.boxplot(column='Sharpe', by='Strategy', ax=axes[1, 1], patch_artist=True)
+axes[1, 1].set_title("Sharpe Distribution", fontsize=14)
+plt.suptitle("")
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
