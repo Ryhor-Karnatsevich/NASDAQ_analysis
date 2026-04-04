@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
-import polars as pl
 
 # Window settings
 pd.set_option('display.max_columns', None)
@@ -13,39 +12,33 @@ pd.set_option('display.width', 1000)
 with open("../../Data/Results/garch_results.pkl", "rb") as f:
     results = pickle.load(f)
 
-# Extract unique periods and create mapping
+# Extract unique periods
 periods = sorted(set(r["summary"]["Period"] for r in results))
 p = len(periods)
 print(f"Periods found: {p}")
+print(f"-"*30)
+# For 3 PERIODS ANALYSIS
 target_periods = ['2007-06-01','2015-06-01','2018-06-01']
-
+# Extract tickers
 ticker_list = list(set(r["summary"]["Ticker"] for r in results))
 
-# =====================================================
-# Fast csv import and filtration to add "Close" column
-path = r"../../Data/Main Data/all_stocks_analysis.csv"
-df = (
-    pl.scan_csv(path)
-    .select(["Date", "Ticker", "Close"])
-    .filter(
-        (pl.col("Ticker").is_in(ticker_list)) &
-        (pl.col("Date") > "2006-06-01")
-    )
-    .collect()
-)
-df = df.to_pandas()
-prices_pivot = df.pivot(index="Date", columns="Ticker", values="Close")
-prices_pivot.index = pd.to_datetime(prices_pivot.index)
-# =====================================================
+# Setup for correct summary table printing
+def print_styled_table(df, title):
+    print("\n" + "=" * 170)
+    print(title.center(170))
+    print("=" * 170)
+    output = df.to_string(justify='center', col_space=10)
+    print(output)
+    print("-" * 170)
 
-def strategies_backtest(results, period_filter=None, verbose=False,
-                        rebalance=0.035, vol_discount=0.9):
+
+#  ========================================================================================================================================================
+#  ========================================================================================================================================================
+#  Strategies Function  ( ENGINE of the project )
+def strategies_backtest(results, rebalance=0.05, vol_discount=1):
 
     all_metrics = []
     diagnostic_positions = [] # for sensitivity plot
-
-    if period_filter:
-        results = [r for r in results if r["summary"]["Period"] == period_filter]
 
     for r in results:
         ticker = r["summary"]["Ticker"]
@@ -65,8 +58,7 @@ def strategies_backtest(results, period_filter=None, verbose=False,
         return_fixed = weight_fixed * returns
         return_fixed.iloc[0] -= fixed_fee
         return_fixed.iloc[-1] -= fixed_fee
-        turnover_fixed = 0
-        target = 0
+
 
         # [2] "TVS with transaction and margin costs"
         # Costs Setup
@@ -88,21 +80,18 @@ def strategies_backtest(results, period_filter=None, verbose=False,
         return_net_basic = return_raw_basic - commissions_0 - margin_costs_0
 
 
-        # ====================================================================================================
+        # ==============================================================================================================
         # [3] Target Volatility Scaling Advanced
         # 1  Setup: Leverage, Costs and Prices
         leverage = 2
-        # vol_discount = 0.8  # value to offset predicted volatility, if it is overrated
-        # rebalance = 0.035  # value for rebalancing threshold
+        # vol_discount = 1  # value to offset predicted volatility, if it is overrated
+        # rebalance = 0.05  # value for rebalancing threshold
         comm_rate = 0.0005
         margin_daily_rate = 0.05 / 252  # annual rate / trading days
-        ticker_prices = prices_pivot[ticker].reindex(returns.index)
-        volatility = volatility.clip(lower=0.0125)  # limit flour for volatility
+        volatility = volatility.clip(lower=0.012)  # limit flour for volatility
 
-        # 2  Asymmetric Target (based on sma_200)
-        volatility_target = 0.02
-        # momentum = ticker_prices.pct_change(20).shift(1)
-        # volatility_target = np.where(momentum > 0, 0.02, 0.01)
+        # 2  Symmetric Target
+        volatility_target = volatility.rolling(100).median().fillna(0.02)
 
         # 3  Volatility Risk Premium Offset
         raw_position = (volatility_target / (volatility * vol_discount)).clip(0, leverage)
@@ -137,14 +126,11 @@ def strategies_backtest(results, period_filter=None, verbose=False,
 
         # 8 Final Net Return for Optimized Strategy
         return_net = return_raw - commissions - margin_costs
-
-        # ====================================================================================================
-        # ====================================================================================================
-        # ====================================================================================================
+        # ==============================================================================================================
 
         # Dictionary with return and weight for final table
         strategies = {
-            "Buy & Hold": (return_fixed, weight_fixed,turnover_fixed,None, None),
+            "Buy & Hold": (return_fixed, weight_fixed,None,None, None),
             "TVS with transaction and margin costs": (return_net_basic, position_basic,turnover_basic,target_0,return_fixed),
             "Target Volatility Scaling (TVS)": (return_net, position,turnover,volatility_target,return_fixed)
         }
@@ -221,36 +207,33 @@ def calculate_metrics(returns_series, equity_series, turnover,target,return_fixe
         "RMSE_Vol": vol_target_dev,
         "TRR": tail_risk_reduction
     }
+#  ========================================================================================================================================================
+#  ========================================================================================================================================================
 
 
 
-# =========================================================
-# EXECUTION
-# =========================================================
+# ======================================================================================================================
+# EXECUTION Setup
+all_results = [] # Storage for ENGINE calculations for every period without sensitivity
+all_positions = [] # Storage for position curves for each ticker and each period (leverage plot)
 
-all_results = []
-
-rebalance_values = [0.02, 0.03, 0.035, 0.05]
+# sensitivity setup
+rebalance_values = [0.02, 0.03, 0.04, 0.05]
 vol_discount_values = [0.6, 0.8, 1.0]
+sensitivity_results = [] # Results from ENGINE but with sensitivity loop
 
-sensitivity_results = []
-all_positions = []
-main_positions = []  # for basic leverage plot
-
+# Main Loop
 for period in periods:
-
-    print("\n" + "="*60)
-    print(f"Processing Period: {period}")
-    print("="*60)
+    print(f"Calculating Period: {period}")
+    print(f"-"*30)
 
     filtered_results = [r for r in results if r["summary"]["Period"] == period]
 
     results_df, period_positions = strategies_backtest(filtered_results)
-    results_df["Period"] = period
     all_results.append(results_df)
-    all_positions.extend(period_positions) # for plots
-    main_positions.extend(period_positions)
+    all_positions.extend(period_positions) # for leverage plot
 
+    # Sensitivity loop
     for reb in rebalance_values:
         for vd in vol_discount_values:
 
@@ -259,20 +242,21 @@ for period in periods:
                 rebalance=reb,
                 vol_discount=vd
             )
-
+            # for data integrity safety
             if not tmp_df.empty:
-                tmp_df["Period"] = period
+                tmp_df["Period"] = period # exceptionally for safety
                 tmp_df["rebalance"] = reb
                 tmp_df["vol_discount"] = vd
                 sensitivity_results.append(tmp_df)
 
-final_df = pd.concat(all_results)
+final_df = pd.concat(all_results)                # make table out of raw data
 sensitivity_df = pd.concat(sensitivity_results)
+# ======================================================================================================================
 
-# =========================================================
-# PERIODS ANALYSIS
-# =========================================================
 
+
+# Creating "3 PERIODS ANALYSIS"
+# ======================================================================================================================
 regime_df = final_df[final_df["Period"].isin(target_periods)].copy()
 regime_df["Periods"] = regime_df["Period"].map({
     target_periods[0]: "2007-2009",
@@ -310,20 +294,6 @@ regime_summary["Outperf. (vs B&H)"] = [
     win_rates_regime.get(index, "-") for index in regime_summary.index
 ]
 
-# =========================================================
-# FINAL SUMMARY
-summary = final_df.groupby("Strategy").agg({
-    "Total Return": "mean",
-    "Sharpe": "mean",
-    "Max_Drawdown": "mean",
-    "Annual_Vol": "mean",
-    "Hit_Ratio": "mean",
-    "Turnover": "mean",
-    "CVaR": "mean",
-    "RMSE_Vol": "mean",
-    "TRR": "mean"
-}).sort_values("Sharpe", ascending=False)
-
 # Periods printing setup
 regime_print = regime_summary.copy()
 cols_2_decimal = ["Turnover", "Max_Drawdown", "Annual_Vol"]
@@ -336,7 +306,26 @@ for col in cols_4_decimal:
         regime_print[col] = regime_print[col].apply(lambda x: f"{x:.4f}" if pd.notnull(x) else "-")
 regime_print = regime_print.fillna("-")
 
-# FINAL table printing setup
+# Printing
+print_styled_table(regime_print, "3 PERIODS ANALYSIS")
+# ======================================================================================================================
+
+
+# Creating "AVERAGE PERFORMANCE ACROSS SELECTED PERIODS"
+# ======================================================================================================================
+summary = final_df.groupby("Strategy").agg({
+    "Total Return": "mean",
+    "Sharpe": "mean",
+    "Max_Drawdown": "mean",
+    "Annual_Vol": "mean",
+    "Hit_Ratio": "mean",
+    "Turnover": "mean",
+    "CVaR": "mean",
+    "RMSE_Vol": "mean",
+    "TRR": "mean"
+}).sort_values("Sharpe", ascending=False)
+
+# Average table printing setup
 summary_print = summary.copy()
 for col in cols_2_decimal:
     if col in summary_print.columns:
@@ -346,24 +335,22 @@ for col in cols_4_decimal:
         summary_print[col] = summary_print[col].apply(lambda x: f"{x:.4f}" if pd.notnull(x) else "-")
 summary_print = summary_print.fillna("-")
 
-# printing "3 PERIODS ANALYSIS"  and  "FINAL SUMMARY"
-def print_styled_table(df, title):
-    print("\n" + "=" * 170)
-    print(title.center(170))
-    print("=" * 170)
-    output = df.to_string(justify='center', col_space=10)
-    print(output)
-    print("-" * 170)
-print_styled_table(regime_print, "3 PERIODS ANALYSIS")
+# Printing
 print_styled_table(summary_print, "AVERAGE PERFORMANCE ACROSS SELECTED PERIODS")
+# ======================================================================================================================
 
 
-### ==============================================================================================================
+
+
+
+
+
+### ==================================================================================================================
 ### PLOTS FOR PERIODS
-### ==============================================================================================================
+### ==================================================================================================================
 
 
-# ===================================================================================================
+# ====================================================================================================================
 # CORE ANALYSIS (4 PLOTS)
 # Sharpe, Max Drawdown, Return, Equity Curve
 sharpe_dyn = final_df.groupby(["Period", "Strategy"])["Sharpe"].mean().unstack()
@@ -409,11 +396,11 @@ for ax in axes.flat:
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
-# ===================================================================================================
+# ====================================================================================================================
 
 
 
-#===================================================================================================
+# ====================================================================================================================
 # Volatility Targeting Accuracy
 # Aggregated portfolio volatility vs target
 all_vols = []
@@ -432,14 +419,14 @@ plt.title("Volatility Targeting Accuracy (Portfolio Level)", fontsize=14)
 plt.legend()
 plt.grid(alpha=0.2)
 plt.show()
-#===================================================================================================
+# ====================================================================================================================
 
 
 
-#===================================================================================================
+# ====================================================================================================================
 # Leverage Distribution (Main Strategy Only)
 plt.figure(figsize=(10, 6))
-plt.hist(main_positions, bins=50, color='teal', alpha=0.7, edgecolor='white')
+plt.hist(all_positions, bins=50, color='teal', alpha=0.7, edgecolor='white')
 plt.axvline(x=1.0, color='red', linestyle='--', label='No Leverage (100% Weight)')
 plt.title("Leverage Usage Distribution (Default Parameters)", fontsize=14)
 plt.xlabel("Position Size (0.0 to 2.0)")
@@ -447,17 +434,100 @@ plt.ylabel("Frequency (Days)")
 plt.legend()
 plt.grid(alpha=0.2)
 plt.show()
-#===================================================================================================
+# ====================================================================================================================
 
 
 
+# ====================================================================================================================
+# EQUITY CURVES PLOT
+plt.figure(figsize=(12, 7))
 
-### ==============================================================================================================
+for strategy_name in final_df["Strategy"].unique():
+    # Calculate average cumulative return across all tickers/periods
+    strat_data = final_df[final_df["Strategy"] == strategy_name]
+    # Group by index/time if possible, or just plot the mean total return growth
+    avg_growth = (1 + strat_data.groupby("Period")["Total Return"].mean()).cumprod()
+    plt.plot(avg_growth.values, label=strategy_name, linewidth=2)
+
+plt.title("Cumulative Growth of $1 (Average across Portfolio)", fontsize=15, fontweight='bold')
+plt.xlabel("Test Periods")
+plt.ylabel("Portfolio Value")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+# ====================================================================================================================
+
+
+
+# ====================================================================================================================
+# SMOOTHED POSITION (DIAGNOSTIC)
+plt.figure(figsize=(10, 5))
+# Converting the list of all positions to a Series to see the leverage trend
+pd.Series(all_positions).rolling(200).mean().plot(color='teal', lw=2)
+plt.axhline(y=1.0, color='red', linestyle='--', label='Full Capital Usage (1x)')
+plt.title("Portfolio Leverage Trend (Smoothed)", fontsize=14)
+plt.ylabel("Position Size")
+plt.legend()
+plt.show()
+# ====================================================================================================================
+
+
+
+# ====================================================================================================================
+# VOLATILITY TARGETING ACCURACY PLOT
+plt.figure(figsize=(12, 6))
+
+# Extract realized volatility for a sample ticker or aggregate portfolio
+sample_ticker = ticker_list[0]
+sample_results = [r for r in results if r["summary"]["Ticker"] == sample_ticker][0]
+s_ret = sample_results["series"]["returns"] / 100
+realized_vol = s_ret.rolling(20).std() * np.sqrt(252)
+
+# Use a static or adaptive target for comparison
+plt.plot(realized_vol.index, realized_vol.values, label='Realized Vol (20d Rolling)', color='orange', alpha=0.8)
+plt.axhline(y=0.02, color='black', linestyle='--', label='Static Target (2%)')
+
+plt.title(f"Volatility Targeting Accuracy: {sample_ticker}", fontsize=14)
+plt.ylabel("Annualized Volatility")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+# ====================================================================================================================
+
+
+
+# ====================================================================================================================
+# FINAL DIAGNOSTIC: PORTFOLIO LEVERAGE DYNAMICS
+plt.figure(figsize=(14, 6))
+
+# Smoothing the positions to see the trend across all tickers and periods
+smoothed_pos = pd.Series(all_positions).rolling(window=500).mean()
+
+plt.plot(smoothed_pos, color='#2E8B57', linewidth=2, label='Avg Portfolio Leverage (500-day MA)')
+plt.axhline(y=1.0, color='red', linestyle='--', alpha=0.6, label='Neutral (1.0x)')
+plt.axhline(y=1.5, color='orange', linestyle=':', alpha=0.6, label='High Leverage (1.5x)')
+
+plt.fill_between(range(len(smoothed_pos)), 0, smoothed_pos, color='green', alpha=0.05)
+
+plt.title("System-Wide Leverage Dynamics (Diagnostic)", fontsize=16, fontweight='bold')
+plt.xlabel("Cumulative Trading Days (All Periods/Tickers)")
+plt.ylabel("Average Position Size")
+plt.ylim(0, 2.1)
+plt.legend(loc='upper right')
+plt.grid(axis='y', alpha=0.2)
+
+plt.tight_layout()
+plt.show()
+# ====================================================================================================================
+
+
+
+### ==================================================================================================================
 ### SENSITIVITY PLOTS
-### ==============================================================================================================
+### ==================================================================================================================
 
 
-# ==============================================================================================================
+# ====================================================================================================================
 # ROBUSTNESS: SENSITIVITY ANALYSIS (4 HEATMAPS)
 # Sharpe, CVaR, Return, Std Sharpe
 tvs_sens = sensitivity_df[sensitivity_df["Strategy"] == "Target Volatility Scaling (TVS)"]
@@ -489,35 +559,11 @@ for i, (metric, title, cmap) in enumerate(metrics):
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
-# ==============================================================================================================
+# ====================================================================================================================
 
 
 
-#===================================================================================================
-# SMA Window Sensitivity
-sma_values = [50, 100, 150, 200, 250]
-sma_results = []
-
-for sma in sma_values:
-    res_df, _ = strategies_backtest(filtered_results, sma_window=sma)
-    res_df["sma_window"] = sma
-    sma_results.append(res_df)
-
-sma_df = pd.concat(sma_results)
-sma_plot = sma_df.groupby("sma_window")["Sharpe"].mean()
-
-plt.figure(figsize=(10, 5))
-sma_plot.plot(kind='bar', color='skyblue', edgecolor='black')
-plt.title("Sensitivity to SMA Window (Trend Detection)", fontsize=14)
-plt.ylabel("Average Sharpe Ratio")
-plt.xlabel("SMA Lookback Period")
-plt.grid(axis='y', alpha=0.3)
-plt.show()
-#===================================================================================================
-
-
-
-#===================================================================================================
+# ====================================================================================================================
 # Leverage Sensitivity
 plt.figure(figsize=(10, 6))
 plt.hist(all_positions, bins=30, color='teal', alpha=0.7, edgecolor='white')
@@ -528,4 +574,4 @@ plt.ylabel("Frequency (Days)")
 plt.legend()
 plt.grid(alpha=0.2)
 plt.show()
-#===================================================================================================
+# ====================================================================================================================
