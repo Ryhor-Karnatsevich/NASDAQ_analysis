@@ -9,26 +9,27 @@ import polars as pl
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1000)
 
-# Import model
+# Import trained EGARCH(2,1)
 with open("../../Data/Results/garch_results.pkl", "rb") as f:
     results = pickle.load(f)
 
 # Extract unique periods and create mapping
 periods = sorted(set(r["summary"]["Period"] for r in results))
-print(f"Periods found: {periods}")
+p = len(periods)
+print(f"Periods found: {p}")
 target_periods = ['2007-06-01','2015-06-01','2018-06-01']
 
 ticker_list = list(set(r["summary"]["Ticker"] for r in results))
 
 # =====================================================
-# Fast csv import and filtration to add close column
+# Fast csv import and filtration to add "Close" column
 path = r"../../Data/Main Data/all_stocks_analysis.csv"
 df = (
     pl.scan_csv(path)
     .select(["Date", "Ticker", "Close"])
     .filter(
         (pl.col("Ticker").is_in(ticker_list)) &
-        (pl.col("Date") > "2015-01-01")
+        (pl.col("Date") > "2006-06-01")
     )
     .collect()
 )
@@ -38,7 +39,7 @@ prices_pivot.index = pd.to_datetime(prices_pivot.index)
 # =====================================================
 
 def strategies_backtest(results, period_filter=None, verbose=False,
-                        rebalance=0.035, vol_discount=0.8, sma_window=200):
+                        rebalance=0.035, vol_discount=0.9):
 
     all_metrics = []
     diagnostic_positions = [] # for sensitivity plot
@@ -99,8 +100,9 @@ def strategies_backtest(results, period_filter=None, verbose=False,
         volatility = volatility.clip(lower=0.0125)  # limit flour for volatility
 
         # 2  Asymmetric Target (based on sma_200)
-        sma = ticker_prices.rolling(sma_window).mean().shift(1)
-        volatility_target = np.where(ticker_prices.shift(1) > sma, 0.02, 0.01)
+        volatility_target = 0.02
+        # momentum = ticker_prices.pct_change(20).shift(1)
+        # volatility_target = np.where(momentum > 0, 0.02, 0.01)
 
         # 3  Volatility Risk Premium Offset
         raw_position = (volatility_target / (volatility * vol_discount)).clip(0, leverage)
