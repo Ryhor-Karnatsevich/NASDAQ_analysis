@@ -356,6 +356,9 @@ In total, 9 model configurations were evaluated for each stock.
 - Only a subset of stocks was used due to computational constraints
 
 
+
+
+
 ## Backtest
 
 The goal of that part is to implement EGARCH(2,1) model into four strategies, choose the best one for further improving. 
@@ -635,4 +638,7 @@ Changing rebalance shows not much difference, only small error.
 
 Volatility targeting does not necessarily maximize returns, but it improves the stability, predictability, and downside protection of returns — which is often more valuable than raw performance in professional portfolio management.
 
+
+
+### Potfolio Based on TVS
 
