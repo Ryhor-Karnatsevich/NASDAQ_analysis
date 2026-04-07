@@ -35,12 +35,12 @@ np.random.seed(52)
 # Want to save results into csv file?
 save = False
 ### SETUP
-MODE = "GRID"
+MODE = "FINAL"
 split_date_grid = "2019-01-01"
 # if for backtest then True, if for portfolio then False
-pkl = False
+pkl = True
 BACKTEST = False
-for_final = True
+for_final = False
 if BACKTEST:
     split_dates = [f"{y}-{m:02d}-01" for y in range(2007, 2019) for m in (6, 12) if not (y == 2018 and m == 12)] #["2007-06-01", "2012-01-01", "2015-01-01","2018-04-01"]
 elif for_final:
@@ -48,7 +48,7 @@ elif for_final:
 else:
     split_dates = ["2015-01-01"]
 
-use_random = True
+use_random = False
 n = 20
 # configurations for FINAL MODE
 CONFIGS = {

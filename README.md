@@ -24,7 +24,7 @@ The goal is to examine return behavior, volatility patterns, and relationships b
 
 ### Robustness and Sensitivity
 - 9 volatility model configurations tested per asset (GARCH / EGARCH / APARCH)
-- 100+ model estimations in FINAL MODE
+- **100** model estimations in FINAL MODE and **180** in GRID MODE
 - 23 rolling backtest periods
 - 12 parameter combinations in sensitivity analysis
 
@@ -216,7 +216,7 @@ Return(t) = β0 + β1 * Return(t-1) + ε
 
 ---
 
-![ols1](Pictures/model_1.png)
+![ols1](Pictures/OLS/model_1.png)
 
 ---
 
@@ -233,7 +233,7 @@ Return(t) = β0 + β1 * Volume(t-1) + ε
 
 ---
 
-![ols1](Pictures/model_2.png)
+![ols1](Pictures/OLS/model_2.png)
 
 ---
 
@@ -247,7 +247,7 @@ Return(t) = β0 + β1 * Return(t-1) + β2 * Volume(t-1) + ε
 
 ---
 
-![ols1](Pictures/model_3.png)
+![ols1](Pictures/OLS/model_3.png)
 
 ---
 
@@ -329,8 +329,8 @@ GRID mode was used to compare different volatility models and select the most su
 
 
 - In total, **9** model configurations were evaluated for each stock.
-- Random sample of **100** tickers was used.
-- Total models estimated: **~900**
+- Random sample of **20** tickers was used.
+- Total models estimated: **~180**
 
 **Results:**
 - EGARCH(2,1) was most frequently selected (13 out of 20).
@@ -351,6 +351,7 @@ GRID mode was used to compare different volatility models and select the most su
    - Train: before 2019
    - Test: starting with 2019
 - Model was estimated separately for each stock.
+- Random sample of **100** tickers was used.
 - Models with convergence issues were excluded.
 - Parallel computation was used to reduce execution time and improve efficiency.
 
@@ -466,7 +467,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 ---
 
-![MLPI](Pictures/strategies comparison.png)
+![MLPI](Pictures/S_Comparison/strategies comparison.png)
 
 ---
 
@@ -482,7 +483,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 ---
 
-![MLPI](Pictures/CSCO_strategies.png)
+![MLPI](Pictures/S_Comparison/CSCO_strategies.png)
 
 ---
 
@@ -566,7 +567,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 ---
 
-![MLPI](Pictures/TVS_analysis.png)
+![F](Pictures/TVS/TVS_analysis.png)
 
 ---
 
@@ -632,15 +633,15 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 ---
 
-![MLPI](Pictures/plot1_tvs.png)
+![MLPI](Pictures/TVS/plot1_tvs.png)
 
 ---
 
-![MLPI](Pictures/plot2_tvs.png)
+![MLPI](Pictures/TVS/plot2_tvs.png)
 
 ---
 
-![MLPI](Pictures/plot3_tvs.png)
+![MLPI](Pictures/TVS/plot3_tvs.png)
 
 ---
 
@@ -737,7 +738,7 @@ Weights in portfolio = **"EQUAL"**
 
 ---
 
-![MLPI](Pictures/portfolio_5.png)
+![MLPI](Pictures/Portfolio/portfolio_5.png)
 
 ---
 
@@ -767,19 +768,19 @@ Overall, TVS Advanced reduces risk and stabilizes performance, even though it sa
 
 ---
 
-![MLPI](Pictures/portfolio_1.png)
+![MLPI](Pictures/Portfolio/portfolio_1.png)
 
 ---
 
-![MLPI](Pictures/portfolio_2.png)
+![MLPI](Pictures/Portfolio/portfolio_2.png)
 
 ---
 
-![MLPI](Pictures/portfolio_3.png)
+![MLPI](Pictures/Portfolio/portfolio_3.png)
 
 ---
 
-![MLPI](Pictures/portfolio_4.png)
+![MLPI](Pictures/Portfolio/portfolio_4.png)
 
 ---
 
