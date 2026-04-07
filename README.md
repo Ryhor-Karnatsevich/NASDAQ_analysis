@@ -1,5 +1,15 @@
 # Stock Market Data Analysis (1962-2020)
 
+## Key Results (TL;DR)
+
+- Returns are not predictable (OLS, ARIMA show no signal)
+- Volatility is predictable (EGARCH works moderately)
+- Volatility-based strategies improve risk-adjusted performance
+- TVS Advanced reduces drawdowns ~2x vs Buy & Hold
+- Trade-off: lower returns, but significantly better **Risk Control**
+
+
+
 ## Project Overview
 
 This project focused on the statistical and econometric analysis of stock market data.
@@ -11,7 +21,43 @@ The goal is to examine return behavior, volatility patterns, and relationships b
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   
 ---
+
+## Execution Pipeline
+
+The project is organized as a sequential pipeline. Scripts should be run in the following order:
+
+### 1. Data Preparation
+- data_merging.py → merges all tickers into a single dataset
+- data_cleaning.py → cleans raw price data
+
+### 2. Feature Engineering & EDA
+- feature_engineering.py → computes values
+- EDA.py → exploratory data analysis (to understand data nature) 
+
+### 3. Modeling
+- OLS.py → return predictability (linear regression)
+- ARIMA.py → time series forecasting
+- GARCH.py → volatility modeling
+
+### 4. Strategy Backtesting
+- Strategies_comparison.py → compares different egarch based strategies
+- Target_Volatility_Scaling.py → core TVS logic
+- TVS_Portfolio.py → builds portfolio based on TVS 
+
+
+## Minimal Setup
+
+- Switch analysis regimes in GARCH
+- Update tickers list inside scripts if needed
+- Adjust train/test split (default: 2000–2018 train, 2019–2020 test)
+- Ensure data is placed in `/Data/Main Data/`
+
+Run scripts manually in order (no automation pipeline implemented).
+
+---
+
 
 ## Dataset
 
@@ -31,27 +77,27 @@ SOURCE: https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset
 
 The dataset was preprocessed to ensure data quality
 
-### Date
+**Date**
 - Standardized date column
 
-### Filtration
+**Filtration**
 - After reviewing the data, I found that the stocks had different listing dates. 
 - I decided to shorten the sample period so that it starts from 2000-01-01 to ensure data consistency across the modern market era.
 
-### Missing Values
+**Missing Values**
 - Removed 462 rows with missing values
 
-### Duplicates
+**Duplicates**
 - All duplicate rows were removed
 
-### Logical Consistency Check
+**Logical Consistency Check**
 - Removed invalid rows where:
   - High < Low
   - High < Close
   - Low > Close
   - Volume < 0
 
-### Invalid Prices
+**Invalid Prices**
 - A significant number of records had invalid Open prices equal to zero.
 - It has been treated as missing values and removed to ensure data integrity.
 
@@ -359,11 +405,11 @@ In total, 9 model configurations were evaluated for each stock.
 
 
 
-## Backtest
+# Backtest
 
 The goal of that part is to implement EGARCH(2,1) model into four strategies, choose the best one for further improving. 
 
-### Strategies Comparison
+## Strategies Comparison
 
 **Method**
 - Gets trained models for chosen list of stock from last iteration in "GARCH" script.
@@ -439,7 +485,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 
 
-## "Target Volatility Scaling (TVS)" improvement Backtest
+# "Target Volatility Scaling (TVS)" improvement Backtest
 
 -The goal of that part is to improve TVS strategy to level where it shows better performance in risk managing than other strategies.
 
@@ -503,7 +549,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 ---
 
 
-### Interpretation
+## Interpretation
 
 - Some metrics show same pattern across all analysis: 
     - Advanced TVS has lower Turnover comparing to Basic TVS, meaning it changes leverage smarter.
@@ -538,7 +584,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 - By using a dynamic leverage and rebalancing threshold, the strategy adapts to market conditions "smarter" than the basic version, resulting in lower costs and better tail-risk protection.
 - The strategy passes robustness checks, showing stable performance across different market regimes and parameter settings, indicating no significant overfitting.
 
-### Visualisation
+## Visualisation
 
 **Graphics**
 - GLOBAL STRATEGY ROBUSTNESS ANALYSIS (2007-2020):
@@ -640,7 +686,7 @@ Volatility targeting does not necessarily maximize returns, but it improves the 
 
 
 
-### Potfolio Based on TVS
+# Potfolio Based on TVS
 
 The goal of that part is to build equal_weight portfolio based on **"TVS Advanced"** strategy.
 And based on metrics grade its efficiency during chosen period and on chosen list of stocks. 
@@ -673,7 +719,7 @@ Weights in portfolio = **"EQUAL"**
 
 ---
 
-### Interpretation
+## Interpretation
 The portfolio results show a clear difference between return-oriented and risk-managed strategies.
 
 Buy & Hold delivers strong total return (70.25%), but at the cost of high volatility (18.71%) and deep drawdowns (-24.79%). This confirms that the baseline is fully exposed to market risk.
@@ -688,7 +734,7 @@ Overall, TVS Advanced reduces risk and stabilizes performance, even though it sa
 
 
 
-### Visualisation
+## Visualisation
 
 **Graphics**
 - Cumulative Portfolio Performance
@@ -736,7 +782,7 @@ Overall, TVS Advanced reduces risk and stabilizes performance, even though it sa
 - It may be connected to different market conditions and levels of volatility
 
 
-### Conclusion
+## Conclusion
 
 The results show that the TVS Advanced strategy provides the most balanced performance among all considered approaches. While it does not achieve the highest total return, it significantly improves risk control by reducing volatility and drawdowns, and delivers the best risk-adjusted performance as reflected in the Sharpe ratio.
 
