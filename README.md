@@ -1,5 +1,11 @@
 # Stock Market Data Analysis (1962-2020)
 
+## Project Overview
+
+This project focused on the statistical and econometric analysis of stock market data.
+
+The goal is to examine return behavior, volatility patterns, and relationships between trading activity and price dynamics.
+
 ## Key Results (TL;DR)
 
 - Returns are not predictable (OLS, ARIMA show no signal)
@@ -8,20 +14,30 @@
 - TVS Advanced reduces drawdowns ~2x vs Buy & Hold
 - Trade-off: lower returns, but significantly better **Risk Control**
 
+## Project Highlights
 
+- Full pipeline: data → models → strategies → portfolio
+- Tested Efficient Market Hypothesis (returns are not predictable)
+- Built EGARCH-based volatility model
+- Developed and improved TVS strategy
+- Implemented portfolio-level evaluation
 
-## Project Overview
+## Limitations
 
-This project focused on the statistical and econometric analysis of stock market data.
-The goal is to examine return behavior, volatility patterns, and relationships between trading activity and price dynamics.
+- No walk-forward / rolling retraining (static train/test split)
+- No transaction slippage or liquidity constraints
+- Equal-weight portfolio (no optimization)
+- Volatility model performance varies across assets
 
 
 ## Installation
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   
+
+```bash
+  git clone <repo>
+  cd <repo>
+  pip install -r requirements.txt
+```
+
 ---
 
 ## Execution Pipeline
@@ -29,27 +45,27 @@ The goal is to examine return behavior, volatility patterns, and relationships b
 The project is organized as a sequential pipeline. Scripts should be run in the following order:
 
 ### 1. Data Preparation
-- data_merging.py → merges all tickers into a single dataset
-- data_cleaning.py → cleans raw price data
+- **data_merging.py** → merges all tickers into a single dataset
+- **data_cleaning.py** → cleans raw price data
 
 ### 2. Feature Engineering & EDA
-- feature_engineering.py → computes values
-- EDA.py → exploratory data analysis (to understand data nature) 
+- **feature_engineering.py** → computes values
+- **EDA.py** → exploratory data analysis (to understand data nature) 
 
 ### 3. Modeling
-- OLS.py → return predictability (linear regression)
-- ARIMA.py → time series forecasting
-- GARCH.py → volatility modeling
+- **OLS.py** → return predictability (linear regression)
+- **ARIMA.py** → time series forecasting
+- **GARCH.py** → volatility modeling
 
 ### 4. Strategy Backtesting
-- Strategies_comparison.py → compares different egarch based strategies
-- Target_Volatility_Scaling.py → core TVS logic
-- TVS_Portfolio.py → builds portfolio based on TVS 
+- **Strategies_comparison.py** → compares different egarch based strategies
+- **Target_Volatility_Scaling.py** → core TVS logic
+- **TVS_Portfolio.py** → builds portfolio based on TVS 
 
 
 ## Minimal Setup
 
-- Switch analysis regimes in GARCH
+- Adjust MODE configuration inside GARCH.py if needed
 - Update tickers list inside scripts if needed
 - Adjust train/test split (default: 2000–2018 train, 2019–2020 test)
 - Ensure data is placed in `/Data/Main Data/`
@@ -77,18 +93,14 @@ SOURCE: https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset
 
 The dataset was preprocessed to ensure data quality
 
-**Date**
+**Data**
 - Standardized date column
+- Removed 462 rows with missing values
+- All duplicate rows were removed
 
 **Filtration**
 - After reviewing the data, I found that the stocks had different listing dates. 
 - I decided to shorten the sample period so that it starts from 2000-01-01 to ensure data consistency across the modern market era.
-
-**Missing Values**
-- Removed 462 rows with missing values
-
-**Duplicates**
-- All duplicate rows were removed
 
 **Logical Consistency Check**
 - Removed invalid rows where:
@@ -120,50 +132,50 @@ The following variables were calculated:
 
 ---
 
-# Exploratory Data Analysis (EDA)
+## Exploratory Data Analysis (EDA)
 
 Two levels of analysis were defined: market level and stock level.
 
-## Market Level
+### Market Level
 
-### Records Distribution
+**Records Distribution**
 - Distribution is strongly left-skewed.
 - A large proportion of stocks have observations covering nearly the entire time period.
 - However, some stocks have significantly fewer data points due to later listing dates.
 
-### Returns Distribution
+**Returns Distribution**
 - Returns are strongly centered around zero, indicating that most daily price changes are small.
 - The distribution is centered around zero but deviates from normality due to the presence of fat tails.
 - The distribution appears approximately symmetric.
 
-### Volatility Distribution
+**Volatility Distribution**
 - Volatility is strongly right-skewed.
 - Most observations correspond to low-volatility periods, while a smaller number of observations represent higher volatility levels.
 
-### Correlation Structure
+**Correlation Structure**
 - Stocks exhibit moderate positive correlation (around 0.3 on average).
 - However, correlations are far from perfect, suggesting the presence of common market factors.
 
-## Stock Level
+### Stock Level
 
-### Price Behavior
+**Price Behavior**
 - Most stocks exhibit long-term trends combined with short-term fluctuations.
 - While many stocks show upward trends, some display significant declines or unstable behavior.
 
-### Returns Behavior
+**Returns Behavior**
 - Returns fluctuate around zero and appear largely random across different stocks.
 
-### Volatility Behavior
+**Volatility Behavior**
 - Some evidence of volatility clustering is observed, where periods of higher volatility tend to persist.
 
-### Moving Average (SMA)
+**Moving Average (SMA)**
 - The moving average closely follows the price, smoothing short-term noise without altering the overall trend.
 
-### Autocorrelation (ACF)
+**Autocorrelation (ACF)**
 - Autocorrelation is generally close to zero, with only small deviations at a few lags.
 - This suggests weak predictability of returns.
 
-## Data Structure
+### Data Structure
 - Most stocks have a large number of observations close to the maximum available.
 - However, some stocks have significantly fewer data points due to later listing dates.
 - To ensure data reliability, stocks with fewer than 500 observations were removed.
@@ -307,7 +319,10 @@ GRID mode was used to compare different volatility models and select the most su
   - (1,2)
   - (2,1)
 
-In total, 9 model configurations were evaluated for each stock.
+
+- In total, **9** model configurations were evaluated for each stock.
+- Random sample of **100** tickers was used.
+- Total models estimated: **~900**
 
 **Results:**
 - EGARCH(2,1) was most frequently selected (13 out of 20).
@@ -328,7 +343,6 @@ In total, 9 model configurations were evaluated for each stock.
    - Train: before 2019
    - Test: starting with 2019
 - Model was estimated separately for each stock.
-- Random sample of 100 tickers was used.
 - Models with convergence issues were excluded.
 - Parallel computation was used to reduce execution time and improve efficiency.
 
@@ -433,7 +447,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
       - Max Drawdown - shows how strategy managed with declines.
       - Annual Volatility - shows how strategy reduces overall volatility.
       - Hit Ratio - probability for strategy to have profitable daily return.
-      - Outperformance (vs B&H) - (Sharp of strategy > Sharpe of baseline).
+      - Outperformance (vs B&H) - (Sharpe of strategy > Sharpe of baseline).
 
 **Graphics**
 - For each ticker, the backtest generates four comprehensive plots:
@@ -539,7 +553,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
     - CVaR - Conditional Value at Risk   
     - RMSE_Vol - Volatility Target Deviation 
     - TRR - Tail Risk Reduction Ratio  
-    - Outperformance (vs B&H) - (Sharp of strategy > Sharpe of baseline).
+    - Outperformance (vs B&H) - (Sharpe of strategy > Sharpe of baseline).
 
 
 ---
@@ -588,7 +602,7 @@ The goal of that part is to implement EGARCH(2,1) model into four strategies, ch
 
 **Graphics**
 - GLOBAL STRATEGY ROBUSTNESS ANALYSIS (2007-2020):
-    - Sharp Ration dynamics
+    - Sharpe Ration dynamics
     - Max Drawdown per period
     - Total Return per period
     - Average Equity Curve
@@ -632,7 +646,7 @@ GLOBAL STRATEGY ROBUSTNESS ANALYSIS (2007-2020)
 - Sharpe Ratio Dynamics:  Advanced TVS shows more stability across periods, while Buy & Hold fluctuates heavily.
 - Max Drawdown: TVS strategies consistently reduce drawdowns, especially during crisis periods.Advanced version has the best results. 
 - Total Return: Buy & Hold and TVS_Basic dominate in strong bull markets. In 2009 and 2020 TVS Advanced shows high return.
-- Average Equity Curve: Advanced TVS produces smoother growth with fewer sharp drops.
+- Average Equity Curve: Advanced TVS produces smoother growth with fewer sharpe drops.
 
 
 LEVERAGE DISTRIBUTION:
@@ -686,7 +700,7 @@ Volatility targeting does not necessarily maximize returns, but it improves the 
 
 
 
-# Potfolio Based on TVS
+# Portfolio Based on TVS
 
 The goal of that part is to build equal_weight portfolio based on **"TVS Advanced"** strategy.
 And based on metrics grade its efficiency during chosen period and on chosen list of stocks. 
