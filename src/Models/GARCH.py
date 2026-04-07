@@ -26,6 +26,11 @@ df = df.groupby("Ticker").filter(lambda x: len(x) >= min_obs)
 # Seed Setup
 np.random.seed(52)
 
+# FOR GRID RESULTS [save=False, MODE="GRID", pkl=False, use_random=True, n=20]
+# FOR FINAL RESULTS [save=False, MODE="FINAL", pkl=False,BACKTEST = False, for_final=True, use_random=True, n=100]
+
+# FOR garch_results.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST=True, use_random=False]
+# FOR portfolio.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST = False, for_final=False, use_random=False]
 
 # Want to save results into csv file?
 save = False
@@ -35,8 +40,11 @@ split_date_grid = "2019-01-01"
 # if for backtest then True, if for portfolio then False
 pkl = False
 BACKTEST = False
+for_final = True
 if BACKTEST:
     split_dates = [f"{y}-{m:02d}-01" for y in range(2007, 2019) for m in (6, 12) if not (y == 2018 and m == 12)] #["2007-06-01", "2012-01-01", "2015-01-01","2018-04-01"]
+elif for_final:
+    split_dates = ["2019-01-01"]
 else:
     split_dates = ["2015-01-01"]
 
@@ -191,7 +199,7 @@ elif MODE == "FINAL":
                  for ticker in tickers]
 
         results = Parallel(n_jobs=-1)(
-            delayed(garch_run)(df, ticker, split_date, type=v, p=p, q=q, verbose=True)
+            delayed(garch_run)(df, ticker, split_date, type=v, p=p, q=q, verbose=False)
             for ticker, v, p, q in tasks
         )
         results = [r for r in results if r is not None]
@@ -217,9 +225,6 @@ elif MODE == "FINAL":
         print(period_final_df.round(4))
 
         all_summary_dfs.append(period_final_df)
-
-
-        all_summary_dfs.append(results_df)
 else:
     print("WRONG MODE")
 
