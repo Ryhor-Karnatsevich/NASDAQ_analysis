@@ -1,10 +1,16 @@
-# Stock Market Data Analysis (1962-2020)
+# Predictability in Financial Markets and Portfolio Strategy
 
 ## Project Overview
 
-This project focused on the statistical and econometric analysis of stock market data.
+This project investigates whether financial markets exhibit predictable structure that can be exploited for portfolio construction.
 
-The goal is to examine return behavior, volatility patterns, and relationships between trading activity and price dynamics.
+The analysis starts by testing return predictability using linear (OLS) and time-series (ARIMA) models, followed by volatility modeling with GARCH-family models.
+
+While return forecasting shows limited predictive power, volatility is found to be significantly more stable and predictable.
+
+Based on this insight, the project develops and evaluates a Target Volatility Scaling (TVS) strategy, which dynamically adjusts portfolio exposure using volatility forecasts.
+
+The results show that volatility-based strategies improve risk-adjusted performance and significantly reduce drawdowns compared to a Buy & Hold benchmark.
 
 ## Key Results (TL;DR)
 
@@ -105,7 +111,7 @@ SOURCE: https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset
 
 - Historical stock data (OHLCV)
 - All NASDAQ tickers
-- Time period: 1962-2021
+- Time period: 1962-2020
 
 ---
 
