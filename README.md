@@ -77,23 +77,27 @@ Note: The dataset (~12GB) is not included in the repository.
 
 The project is organized as a sequential pipeline. Scripts should be run in the following order:
 
-### 1. Data Preparation
-- **data_merging.py** → merges all tickers into a single dataset
-- **data_cleaning.py** → cleans raw price data
+### 1. Data Preparation   
+- src/Data_prep/
+  - **data_merging.py** → merges all tickers into a single dataset
+  - **data_cleaning.py** → cleans raw price data
 
-### 2. Feature Engineering & EDA
-- **feature_engineering.py** → computes features
-- **EDA.py** → exploratory data analysis (to understand data nature) 
+### 2. Feature Engineering & EDA  
+- src/Analysis/
+  - **feature_engineering.py** → computes features
+  - **EDA.py** → exploratory data analysis (to understand data nature) 
 
-### 3. Modeling
-- **OLS.py** → return predictability (linear regression)
-- **ARIMA.py** → time series forecasting
-- **GARCH.py** → volatility modeling
+### 3. Modeling 
+- src/Models/
+  - **OLS.py** → return predictability (linear regression)
+  - **ARIMA.py** → time series forecasting
+  - **GARCH.py** → volatility modeling
 
-### 4. Strategy Backtesting
-- **Strategies_comparison.py** → compares different egarch based strategies
-- **Target_Volatility_Scaling.py** → core TVS logic
-- **TVS_Portfolio.py** → builds portfolio based on TVS 
+### 4. Strategy Backtesting 
+- src/Backtest/
+  - **Strategies_comparison.py** → compares different egarch based strategies
+  - **Target_Volatility_Scaling.py** → core TVS logic
+  - **TVS_Portfolio.py** → builds portfolio based on TVS 
 
 
 ## Minimal Setup
