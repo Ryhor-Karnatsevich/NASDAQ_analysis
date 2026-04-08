@@ -62,11 +62,14 @@ while maintaining competitive returns.
 
 ## Installation
 
+Clone the repository and install dependencies:
+
 ```bash
-  git clone <repo>
-  cd <repo>
-  pip install -r requirements.txt
+git clone https://github.com/Ryhor-Karnatsevich/Predictability-in-Financial-Markets-and-Portfolio-Strategy
+cd Predictability-in-Financial-Markets-and-Portfolio-Strategy
+pip install -r requirements.txt
 ```
+Note: The dataset (~12GB) is not included in the repository.
 
 ---
 
