@@ -30,15 +30,17 @@ np.random.seed(52)
 # FOR FINAL RESULTS [save=False, MODE="FINAL", pkl=False,BACKTEST = False, for_final=True, use_random=True, n=100]
 
 # FOR garch_results.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST=True, use_random=False]
-# FOR portfolio.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST = False, for_final=False, use_random=False]
+# FOR comparison.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST = False, for_final=True, comparison=True, use_random=False]
+# FOR portfolio.pkl [save=False, MODE="FINAL", pkl=True, BACKTEST = False, for_final=False, comparison=False, use_random=False]
+
 
 # Want to save results into csv file?
 save = False
 ### SETUP
-MODE = "FINAL"
+MODE = "GRID"
 split_date_grid = "2019-01-01"
 # if for backtest then True, if for portfolio then False
-pkl = True
+pkl = False
 BACKTEST = False
 for_final = True
 comparison = True
@@ -49,7 +51,7 @@ elif for_final:
 else:
     split_dates = ["2015-01-01"]
 
-use_random = False
+use_random = True
 n = 20
 # configurations for FINAL MODE
 CONFIGS = {
